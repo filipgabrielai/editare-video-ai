@@ -100,6 +100,22 @@ class TestHomebrew(unittest.TestCase):
         self.assertIn("Terminal", v.repara)
 
 
+class TestWhisperPorneste(unittest.TestCase):
+    # whisper-cli.exe poate exista și totuși să nu pornească (lipsesc bibliotecile Microsoft, antivirus): verificarea îl pornește.
+    def test_whisper_care_nu_porneste(self):
+        with mock.patch.object(I.platforma, "gaseste", return_value="C:/unelte/whisper-cli.exe"), \
+                mock.patch.object(I.platforma, "sistem", return_value="windows"):
+            v = I.verifica_whisper(ruleaza_cod=lambda args: (3221225781, "The code execution cannot proceed because VCRUNTIME140.dll was not found."))
+        self.assertFalse(v.ok)
+        self.assertIn("nu pornește", v.detaliu)
+        self.assertIn("VCRedist", v.repara)
+
+    def test_whisper_care_porneste(self):
+        with mock.patch.object(I.platforma, "gaseste", return_value="/opt/homebrew/bin/whisper-cli"):
+            v = I.verifica_whisper(ruleaza_cod=lambda args: (0, "usage: whisper-cli [options] file0 file1 ..."))
+        self.assertTrue(v.ok)
+
+
 class TestConsola(unittest.TestCase):
     def test_consola_cp1252_nu_opreste_scriptul(self):
         env = {**os.environ, "PYTHONIOENCODING": "cp1252", "PYTHONUTF8": "0"}

@@ -31,6 +31,8 @@ REPARA = {
     "node": {"mac": "brew install node", "windows": "winget install -e --id OpenJS.NodeJS.LTS"},
     "ffmpeg": {"mac": "brew install ffmpeg", "windows": "winget install -e --id Gyan.FFmpeg"},
     "whisper": {"mac": "brew install whisper-cpp", "windows": "{py} instalare/descarca.py whisper"},
+    "whisper_porneste": {"mac": "brew reinstall whisper-cpp",
+                         "windows": "winget install -e --id Microsoft.VCRedist.2015+.x64 (bibliotecile Microsoft de care are nevoie whisper.cpp)"},
     "model": {"*": "{py} instalare/descarca.py model"},
     "pachete": {"*": "npm install"},
     "disc": {"*": f"fă loc pe disc: ai nevoie de cel puțin {DISC_MINIM_GB} GB liberi"},
@@ -77,6 +79,15 @@ def ruleaza(args: list[str]) -> str | None:
 
 
 BREW_CAI = (Path("/opt/homebrew/bin/brew"), Path("/usr/local/bin/brew"))   # Apple Silicon, Intel
+
+
+def ruleaza_cu_cod(args: list[str]) -> tuple[int | None, str]:
+    """Codul de ieșire și ieșirea unei comenzi; (None, motivul) dacă nu pornește deloc."""
+    try:
+        r = subprocess.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return None, str(e)
+    return r.returncode, (r.stdout or "") + (r.stderr or "")
 
 
 def verifica_homebrew(cai: tuple[Path, ...] = BREW_CAI) -> Verificare | None:
@@ -129,10 +140,16 @@ def verifica_ffmpeg() -> Verificare:
     return Verificare("ffmpeg", True, "instalat, cu libx264 și aac")
 
 
-def verifica_whisper() -> Verificare:
-    lipsa = [n for n in ("whisper-cli", "whisper-server") if not platforma.gaseste(n)]
-    ok = not lipsa
-    return Verificare("whisper.cpp", ok, "instalat" if ok else "lipsește " + ", ".join(lipsa), "" if ok else repara("whisper"))
+def verifica_whisper(ruleaza_cod=ruleaza_cu_cod) -> Verificare:
+    """Nu ajunge să existe fișierul: whisper-cli.exe poate să nu pornească (biblioteci Microsoft lipsă, antivirus). Îl pornim."""
+    lipsa = [n for n in platforma.WHISPER_EXE if not platforma.gaseste(n)]
+    if lipsa:
+        return Verificare("whisper.cpp", False, "lipsește " + ", ".join(lipsa), repara("whisper"))
+    cod, iesire = ruleaza_cod([platforma.gaseste("whisper-cli"), "--help"])
+    if cod != 0:
+        coada = " ".join((iesire or "").strip().splitlines()[-2:])[:200] or f"cod {cod}"
+        return Verificare("whisper.cpp", False, f"instalat, dar nu pornește ({coada})", repara("whisper_porneste"))
+    return Verificare("whisper.cpp", True, "instalat și pornește")
 
 
 def verifica_model(cale: Path | None = None) -> Verificare:

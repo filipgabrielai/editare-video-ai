@@ -92,7 +92,7 @@ def model(nume: str) -> Path:
 def whisper_windows() -> None:
     if platforma.sistem() != "windows":
         raise SystemExit("Pe Mac, whisper.cpp se instalează cu: brew install whisper-cpp")
-    if (platforma.UNELTE_WHISPER / "whisper-cli.exe").is_file():
+    if platforma.whisper_complet(platforma.UNELTE_WHISPER):
         print("whisper.cpp e deja în unelte/whisper/.")
         return
     tinta = platforma.UNELTE_WHISPER.parent   # arhiva are deja folderul Release/

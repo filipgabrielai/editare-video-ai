@@ -47,6 +47,14 @@ class TestPlatforma(unittest.TestCase):
         self.assertEqual(platforma.MARIMI_MODEL["ggml-large-v3-turbo.bin"], 1624555275)
         self.assertEqual(platforma.MARIMI_MODEL["ggml-tiny.bin"], 77691713)
 
+    def test_whisper_complet_cere_ambele_executabile(self):
+        # descarca.py și verificarea trebuie să ceară același lucru, altfel o dezarhivare întreruptă dă o buclă fără ieșire
+        with tempfile.TemporaryDirectory(prefix="whisper ăî ") as d:
+            (Path(d) / platforma.exe("whisper-cli")).write_text("x")
+            self.assertFalse(platforma.whisper_complet(Path(d)))
+            (Path(d) / platforma.exe("whisper-server")).write_text("x")
+            self.assertTrue(platforma.whisper_complet(Path(d)))
+
 
 if __name__ == "__main__":
     unittest.main()

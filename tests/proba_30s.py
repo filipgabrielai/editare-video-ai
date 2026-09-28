@@ -40,6 +40,9 @@ def transcrie(wav: Path, model: Path) -> str:
         raise SystemExit("whisper-cli lipsește: rulează verificarea (verificare/instalarea.py).")
     r = subprocess.run([cli, "-m", str(model), "-l", "ro", "-np", "-nt", "-f", str(wav)],
                        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
+    if r.returncode != 0:
+        coada = " ".join((r.stderr or r.stdout or "").strip().splitlines()[-3:])
+        raise SystemExit(f"whisper-cli nu a pornit (cod {r.returncode}): {coada}. Rulează verificarea: verificare/instalarea.py.")
     return " ".join((r.stdout or "").split())
 
 

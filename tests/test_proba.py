@@ -1,3 +1,4 @@
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -36,6 +37,16 @@ class TestComandaRandare(unittest.TestCase):
     def test_randarea_fara_telemetrie(self):
         # CLAUDE.md promite că nu se trimite nimic nicăieri: telemetria HyperFrames e oprită.
         self.assertEqual(P.mediu_randare().get("HYPERFRAMES_NO_TELEMETRY"), "1")
+
+
+    def test_transcrierea_se_opreste_cand_whisper_nu_porneste(self):
+        # altfel omul vede „(nimic)” și e trimis să redescarce un model de 1,6 GB care e bun
+        gata = subprocess.CompletedProcess(args=[], returncode=1, stdout="", stderr="error: failed to initialize\nggml.dll missing")
+        with mock.patch.object(P.platforma, "gaseste", return_value="whisper-cli"), mock.patch("subprocess.run", return_value=gata):
+            with self.assertRaises(SystemExit) as e:
+                P.transcrie(Path("proba.wav"), Path("ggml-tiny.bin"))
+        self.assertIn("nu a pornit", str(e.exception))
+        self.assertIn("ggml.dll missing", str(e.exception))
 
 
 if __name__ == "__main__":

@@ -12,6 +12,7 @@ MODELE = RADACINA / "modele"
 UNELTE_WHISPER = RADACINA / "unelte" / "whisper" / "Release"   # Windows: arhiva oficială whisper.cpp, dezarhivată de instalare/descarca.py
 MODEL_IMPLICIT = "ggml-large-v3-turbo.bin"
 MARIMI_MODEL = {"ggml-large-v3-turbo.bin": 1624555275, "ggml-tiny.bin": 77691713}   # octeți, de pe Hugging Face (x-linked-size)
+WHISPER_EXE = ("whisper-cli", "whisper-server")
 
 
 def sistem() -> str:
@@ -30,6 +31,11 @@ def gaseste(nume: str) -> str | None:
     if local.is_file():
         return str(local)
     return shutil.which(nume)
+
+
+def whisper_complet(dosar: Path) -> bool:
+    """Copia de Windows e completă doar cu ambele executabile: o dezarhivare întreruptă poate lăsa doar unul."""
+    return all((dosar / exe(n)).is_file() for n in WHISPER_EXE)
 
 
 def model_whisper() -> Path:
