@@ -40,9 +40,11 @@ class TestHyperframes(unittest.TestCase):
             iesire = Path(d) / "planse"
             iesire.mkdir()
             (iesire / "frame-05-at-9.0s.png").write_text("de la compoziția trecută")
+            (iesire / "contact-sheet-2.jpg").write_text("tot de atunci")
             gata = subprocess.CompletedProcess([], 0, "", "")
             with mock.patch.object(HF, "ruleaza", return_value=gata):
                 self.assertEqual(HF.snapshot(Path("p"), [1.0], iesire), [])
+            self.assertFalse((iesire / "contact-sheet-2.jpg").exists())
 
 
 if __name__ == "__main__":

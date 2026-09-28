@@ -23,11 +23,14 @@ from unelte import hyperframes, platforma  # noqa: E402
 FPS = 60
 MAX_CAR = 22   # un grup de captions mai lung (la 58 px, centrat) ajunge peste butoanele din dreapta, de la x = 950
 ROT = {"card": ["boom", "knock"], "pop": ["pop", "thump", "click"]}
-VOL = {"boom": (0.8, 0.6), "knock": (0.7, 0.25), "pop": (0.55, 0.15), "thump": (0.6, 0.25), "click": (0.55, 0.12)}
+VOL = {"boom": (0.35, 0.6), "knock": (0.35, 0.2), "pop": (0.55, 0.12), "thump": (0.5, 0.25), "click": (0.55, 0.14)}   # volum, durată
+MIN_PAUZA = 1.0   # între două sunete; sub asta Filip le-a găsit „cam dese”
+INALTIME_RAND = {False: 84, True: 66}   # ca .card .row și .card.compact .row din stil
 
 
 class Sunete:
-    """Sunetele în rotație: niciodată același de două ori la rând, niciodată două pe același cadru."""
+    """Sunetele în rotație: niciodată același de două ori la rând, cel puțin o secundă între ele. Cardul are prioritate:
+    un pop prea aproape de intrarea unui card nu se mai aude."""
 
     def __init__(self) -> None:
         self.lista: list[tuple[float, str, float, float]] = []
@@ -36,8 +39,13 @@ class Sunete:
 
     def adauga(self, fel: str, t: float, vol: float | None = None) -> None:
         t = round(t * FPS) / FPS
-        if any(abs(t - x[0]) < 0.5 / FPS for x in self.lista):
+        aproape = [x for x in self.lista if abs(t - x[0]) < MIN_PAUZA]
+        if fel == "pop" and aproape:
             return
+        if fel == "card":
+            if any(x[1] in ROT["card"] for x in aproape):
+                return
+            self.lista = [x for x in self.lista if x not in aproape]
         rot = ROT[fel]
         nume = rot[self.contor[fel] % len(rot)]
         if nume == self.ultim:
@@ -69,7 +77,25 @@ def grupuri(ws: list[dict], cuts: list[float], max_n: int = 3) -> list[list[dict
     return out
 
 
-def planifica(sc: dict, ws: list[dict], cuts: list[float], durata: float, st: dict) -> dict:
+def logouri_proiect(dosar: Path) -> dict[str, str]:
+    """Logourile puse de om în proiecte/<slug>/logo/ (fișierele oficiale), după nume: {"claude": "claude.png"}."""
+    d = dosar / "logo"
+    if not d.is_dir():
+        return {}
+    return {p.stem: p.name for p in sorted(d.iterdir()) if p.suffix.lower() in (".png", ".svg", ".jpg", ".jpeg", ".webp")}
+
+
+def logouri_lipsa(sc: dict, logouri: dict[str, str]) -> list[str]:
+    erori = []
+    for c in sc.get("carduri", []):
+        for r in c.get("randuri", []):
+            for n in ([r["logo"]] if isinstance(r.get("logo"), str) else r.get("logo") or []):
+                if n not in logouri:
+                    erori.append(f"logoul „{n}” lipsește: pune fișierul oficial (de pe site-ul lor) în proiecte/<slug>/logo/{n}.png sau .svg")
+    return erori
+
+
+def planifica(sc: dict, ws: list[dict], cuts: list[float], durata: float, st: dict, logouri: dict[str, str] | None = None) -> dict:
     js: list[str] = []
     html: list[str] = []
     beats: list[tuple[float, str]] = []
@@ -100,7 +126,13 @@ def planifica(sc: dict, ws: list[dict], cuts: list[float], durata: float, st: di
         cid = f"c-{c['id']}"
         corp = []
         for r_i, r in enumerate(c.get("randuri", [])):
-            ico = f'<span class="ic">{S.ICOANE[r["icoana"]]}</span>' if r.get("icoana") else ""
+            if r.get("logo"):
+                nume = [r["logo"]] if isinstance(r["logo"], str) else r["logo"]
+                ico = '<span class="lgs">' + "".join(
+                    f'<img class="lg{" inv" if n in sc.get("logo_inversat", []) else ""}" src="assets/logo/{S.esc((logouri or {}).get(n, n))}" alt="">'
+                    for n in nume) + "</span>"
+            else:
+                ico = f'<span class="ic">{S.ICOANE[r["icoana"]]}</span>' if r.get("icoana") else ""
             ascuns = " ascuns" if r_i > 0 and r.get("ancora") else ""
             corp.append(f'<div class="row{ascuns}" id="{cid}-r{r_i}">{ico}<span class="et">{S.markup(r["text"])}</span></div>')
         if c.get("chips"):
@@ -123,8 +155,9 @@ def planifica(sc: dict, ws: list[dict], cuts: list[float], durata: float, st: di
         for r_i, r in enumerate(c.get("randuri", [])):
             if r_i > 0 and r.get("ancora"):
                 tr = max(t0 + 0.35, A(r["ancora"]) - 0.03)
-                js.append(f'tl.fromTo("#{cid}-r{r_i}", {{height:0, autoAlpha:0, x:-18}}, '
-                          f'{{height:"auto", autoAlpha:1, x:0, duration:0.32, ease:"power2.out"}}, {tr:.3f});')
+                h = INALTIME_RAND[bool(c.get("compact"))]   # cât primul rând, ca distanța dintre rânduri să fie egală
+                js.append(f'tl.fromTo("#{cid}-r{r_i}", {{height:0, minHeight:0, autoAlpha:0, x:-18}}, '
+                          f'{{height:{h}, minHeight:{h}, autoAlpha:1, x:0, duration:0.32, ease:"power2.out"}}, {tr:.3f});')
                 sun.adauga("pop", tr)
         mod = c.get("chips_mod", "aprinde")
         for j, ch in enumerate(c.get("chips", [])):
@@ -231,6 +264,11 @@ def pregateste_assets(dosar: Path, stil: str) -> None:
     shutil.copy(rad / "fonturi" / "fonturi.css", a / "fonturi" / "fonturi.css")
     for f in (rad / "sunete").glob("*.wav"):
         shutil.copy(f, a / "sunete" / f.name)
+    if (dosar / "logo").is_dir():
+        (a / "logo").mkdir(exist_ok=True)
+        for f in (dosar / "logo").iterdir():
+            if f.is_file():
+                shutil.copy(f, a / "logo" / f.name)
 
 
 def durata_video(f: Path) -> float:
@@ -248,6 +286,8 @@ def main(argv: list[str] | None = None) -> int:
     with open(dosar / "scenariu.json", encoding="utf-8") as f:
         sc = json.load(f)
     erori, avert = S.valideaza(sc)
+    logouri = logouri_proiect(dosar)
+    erori += logouri_lipsa(sc, logouri)
     for x in avert:
         print("atenție:", x)
     if erori:
@@ -258,7 +298,7 @@ def main(argv: list[str] | None = None) -> int:
         cuts = json.load(f)["taieturi"]
     durata = durata_video(dosar / "taiat.mp4")
     st = S.stil(sc["stil"])
-    plan = planifica(sc, ws, cuts, durata, st)
+    plan = planifica(sc, ws, cuts, durata, st, logouri)
     cap_html, cap_js = captions(grupuri(ws, cuts), durata, st["accent"])
     pregateste_assets(dosar, sc["stil"])
     (dosar / "index.html").write_text(pagina(sc, plan, cap_html, cap_js, durata), encoding="utf-8")

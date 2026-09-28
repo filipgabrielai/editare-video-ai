@@ -25,7 +25,8 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
    părului (`carduri_y` ≥ 262); captions pe guler (`captions_y` ≤ 1480).
 6. **Scenariul:** `proiecte/<slug>/scenariu.json`, formatul în `docs/SCENARIU.md`. Card doar pe ce adaugă ceva peste ce se
    vede și se aude: ideea, cifra, pașii. Maximum 4 rânduri, text scurt, cuvântul important cu `**...**`. Ancorele se copiază
-   din `transcript.json`.
+   din `transcript.json`. Fiecare aplicație numită primește logoul ei: îl iei doar de pe site-ul oficial (iconița din pagină
+   sau pagina de brand), îl pui în `proiecte/<slug>/logo/` și îl verifici cu ochii înainte să-l folosești.
 7. **Compoziția:** `python3 procese/reel/compozitie.py proiecte/<slug>`. Dacă dă erori, repari scenariul.
 8. **Planșele:** `python3 procese/reel/planse.py proiecte/<slug>` și citești fiecare foaie: nimic important în roșu, cardurile nu
    acoperă fața, textul nu iese din card, captions se citesc. Repari și reiei 7–8.

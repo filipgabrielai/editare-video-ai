@@ -25,6 +25,9 @@ Claude scrie `proiecte/<slug>/scenariu.json` după ce citește transcriptul și 
   diacriticele, majusculele și punctuația nu contează). Cardul iese când intră următorul; ultimul rămâne până la final.
 - `randuri` (max 4): `text` cu `**cuvântul important**` colorat, `icoana` (numele din `stiluri/icoane.json`), `ancora`
   (opțional) pe care apare rândul. Primul rând e mereu static.
+- `logo` (în loc de `icoana`): numele unui logo, sau o listă (`["claude", "openai"]`), pentru rândul care numește aplicația.
+  Fișierul oficial (PNG sau SVG, de pe site-ul lor sau din pagina lor de brand) stă în `proiecte/<slug>/logo/<nume>.png`;
+  nu intră în repo. Logourile negre pe fundal transparent se trec în `"logo_inversat": ["openai"]` și apar albe.
 - `chips`: etichete scurte; `chips_mod` „aprinde” (stau gri, se aprind pe ancoră) sau „apar” (apar pe ancoră).
 - `cifra`: `{"valoare": "80%", "ancora": "..."}`, o cifră mare.
 - `compact`: card mic la 262 px, pentru când pe ecran e o înregistrare de ecran (se vede mai mult din ea).

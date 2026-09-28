@@ -21,10 +21,10 @@ class TestCompozitie(unittest.TestCase):
 
     def test_sunetele_nu_se_repeta_si_nu_se_calca(self):
         s = C.Sunete()
-        for t in (0.1, 1.0, 1.0, 2.0, 3.0):
+        for t in (0.1, 1.0, 1.0, 2.0, 3.0, 4.2):
             s.adauga("card", t)
+        self.assertEqual([round(x[0], 2) for x in s.lista], [0.1, 2.0, 3.0, 4.2])   # cel puțin o secundă între sunete
         nume = [x[1] for x in s.lista]
-        self.assertEqual(len(nume), 4)
         self.assertTrue(all(a != b for a, b in zip(nume, nume[1:])))
 
     def test_grupuri(self):
@@ -52,6 +52,36 @@ class TestCompozitie(unittest.TestCase):
         self.assertIn("--compact-y:262px", C.pagina(fara_titlu, plan, [], [], 6.0))
         css = (RAD / "stiluri" / "studio" / "reel.css").read_text(encoding="utf-8")
         self.assertIn(".card.compact{top:var(--compact-y)", css)
+
+    def test_randurile_care_apar_au_aceeasi_inaltime_ca_primul(self):
+        # cu height:"auto" rândurile 2 și 3 ieșeau mai joase decât primul (84 px) și al treilea părea înghesuit
+        js = "\n".join(C.planifica(self.sc, self.ws, [], 6.0, S.stil("studio"))["js"])
+        self.assertNotIn('height:"auto"', js)
+        self.assertIn("height:84, minHeight:84", js)
+
+    def test_sunetele_de_card_sunt_incete_si_rare(self):
+        s = C.Sunete()
+        s.adauga("card", 0.1)
+        s.adauga("pop", 0.6)       # prea aproape de card: nu se aude
+        s.adauga("pop", 1.5)
+        s.adauga("card", 2.0)      # cardul are prioritate: pop-ul de la 1,5 s dispare
+        self.assertEqual([round(x[0], 2) for x in s.lista], [0.1, 2.0])
+        self.assertTrue(all(v <= 0.4 for _, n, v, _ in s.lista if n in ("boom", "knock")))
+
+    def test_logourile_in_locul_iconitei(self):
+        sc = {"stil": "studio", "logo_inversat": ["openai"], "carduri": [{"id": "l1", "ancora": "start", "kicker": "LOCUL 1",
+              "randuri": [{"text": "**Claude Code** și **Codex**", "logo": ["claude", "openai"]}]}]}
+        html = "".join(C.planifica(sc, self.ws, [], 6.0, S.stil("studio"), {"claude": "claude.png", "openai": "openai.svg"})["html"])
+        self.assertIn('<img class="lg" src="assets/logo/claude.png"', html)
+        self.assertIn('<img class="lg inv" src="assets/logo/openai.svg"', html)
+        self.assertNotIn('class="ic"', html)
+
+    def test_logo_lipsa_spune_unde_se_pune(self):
+        sc = {"carduri": [{"id": "a", "randuri": [{"text": "x", "logo": "bolt"}]}]}
+        erori = C.logouri_lipsa(sc, {"claude": "claude.png"})
+        self.assertEqual(len(erori), 1)
+        self.assertIn("bolt", erori[0])
+        self.assertIn("logo/", erori[0])
 
     def test_culoarea_cuvintelor_nu_se_calca(self):
         # două cuvinte rostite la 10 ms unul după altul: tween-ul următor preia culoarea, nu se suprapune cu primul

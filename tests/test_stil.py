@@ -20,6 +20,11 @@ class TestStil(unittest.TestCase):
             self.assertIn(sel, css)
         self.assertNotIn("googleapis", css)   # fără fonturi de pe internet la randare
 
+    def test_logourile_au_stil(self):
+        css = (RAD / "stiluri" / "studio" / "reel.css").read_text(encoding="utf-8")
+        self.assertIn(".lg{", css)
+        self.assertIn(".lg.inv{filter:invert(1)}", css)
+
     def test_fonturi_locale_cu_licenta(self):
         self.assertEqual(len(list((RAD / "fonturi").glob("*.woff2"))), 8)
         self.assertEqual(len(list((RAD / "fonturi").glob("OFL-*.txt"))), 3)
@@ -38,6 +43,10 @@ class TestStil(unittest.TestCase):
                 r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(p)],
                                    capture_output=True, text=True, check=True)
                 self.assertAlmostEqual(float(r.stdout), sunete.SUNETE[p.stem][1], delta=0.02)
+                v = subprocess.run(["ffmpeg", "-hide_banner", "-i", str(p), "-af", "volumedetect", "-f", "null", "-"],
+                                   capture_output=True, text=True).stderr
+                varf = float(v.split("max_volume:")[1].split("dB")[0])
+                self.assertAlmostEqual(varf, sunete.SUNETE[p.stem][2], delta=1.0)   # vârfurile acceptate de Filip: −16…−21 dB
 
 
 if __name__ == "__main__":
