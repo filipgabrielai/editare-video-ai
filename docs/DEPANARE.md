@@ -14,6 +14,15 @@ Windows 10 mai vechi nu are winget. Instalează „App Installer” din Microsof
 ## Am instalat ceva, dar verificarea tot zice că lipsește
 Windows vede programele noi abia după ce redeschizi terminalul. Închide și redeschide Claude Code, apoi rulează din nou `/instalare`.
 
+## Windows: `python` deschide Microsoft Store sau nu face nimic
+Windows are un „alias” care trimite comanda `python` la Store. Mergi în Settings → Apps → Advanced app settings → App execution aliases,
+oprește „python.exe” și „python3.exe”, apoi redeschide Claude Code. Dacă ai Python de pe python.org instalat fără „Add to PATH”,
+comanda `py -3` merge în locul lui `python`.
+
+## Windows: whisper.cpp e instalat, dar „nu pornește”
+De obicei lipsesc bibliotecile Microsoft pe care le folosește (mesajul pomenește VCRUNTIME140.dll sau MSVCP140.dll). Instalează-le cu
+`winget install -e --id Microsoft.VCRedist.2015+.x64`, redeschide Claude Code și rulează din nou verificarea.
+
 ## Antivirusul blochează whisper-cli.exe
 whisper.cpp e descărcat din pagina oficială (github.com/ggml-org/whisper.cpp). Permite fișierul din antivirus sau pune folderul
 `unelte/whisper` la excepții, apoi rulează din nou proba.
@@ -25,7 +34,7 @@ Rulează din nou `python3 instalare/descarca.py model` (pe Windows: `python`). D
 Verifică versiunea de Node.js: trebuie cel puțin 22 (`node --version`). Dacă e mai veche, instalează versiunea LTS din verificare.
 
 ## Randarea din probă eșuează prima dată
-La prima randare se descarcă un browser pentru randare. Ai nevoie de internet; rulează din nou `python3 tests/proba_30s.py`.
+La prima randare se descarcă un browser pentru randare. Ai nevoie de internet; rulează din nou `python3 tests/proba_30s.py` (pe Windows: `python`).
 
 ## Transcrierea iese goală sau aiurea
 Verifică modelul (`python3 verificare/instalarea.py`): dacă e „incomplet”, descarcă-l din nou.

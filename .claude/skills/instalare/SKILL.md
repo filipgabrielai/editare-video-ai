@@ -11,7 +11,9 @@ Scopul: omul ajunge la „Gata, poți edita.” fără să știe ce e un termina
    - Mac: întâi Homebrew. Pe el nu-l poți instala tu: installerul cere parola de la Mac și un terminal real. Îi dai omului
      comanda din „cum repari” (verificarea o afișează), îi spui s-o ruleze în aplicația Terminal, să urmeze pașii „Next steps”
      de la final și apoi să redeschidă Claude Code. Abia după aceea rulezi `brew install python`.
-   - Windows: `winget install -e --id Python.Python.3.12`, apoi îi spui să închidă și să redeschidă Claude Code.
+   - Windows: încearcă întâi `py -3 --version`. Dacă merge, folosești `py -3` peste tot în loc de `python`. Dacă `python` deschide
+     Microsoft Store sau nu afișează nimic, urmezi secțiunea din `docs/DEPANARE.md`. Dacă nu există deloc Python:
+     `winget install -e --id Python.Python.3.12`, apoi îi spui să închidă și să redeschidă Claude Code.
 2. Rulează `python3 verificare/instalarea.py`. Citește fiecare rând `[lipsește]`.
 3. Pentru fiecare lipsă, în ordinea din listă: spune-i într-o propoziție ce e și de ce trebuie, apoi rulează comanda din „cum repari”.
    Excepție: când „cum repari” începe cu „deschide aplicația Terminal”, comanda o rulează omul, nu tu; aștepți să-ți spună că a terminat.
