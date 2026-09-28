@@ -163,9 +163,9 @@ def captions(gr: list[list[dict]], durata: float, accent: str) -> tuple[list[str
             t_w = max(w["start"] - 0.03, t_in)
             t_next = max(g[k + 1]["start"] - 0.03, t_in) if k + 1 < len(g) else t_w + 1
             d_w = max(0.01, min(0.10, t_next - t_w - 0.005))
-            js.append(f'tl.to("#cw-{gi}-{k}", {{color:"{accent}", scale:1.05, duration:{d_w:.3f}, ease:"power2.out"}}, {t_w:.3f});')
+            js.append(f'tl.to("#cw-{gi}-{k}", {{color:"{accent}", scale:1.05, duration:{d_w:.3f}, ease:"power2.out", overwrite:"auto"}}, {t_w:.3f});')
             if k:
-                js.append(f'tl.to("#cw-{gi}-{k - 1}", {{color:"#ffffff", scale:1, duration:{d_w:.3f}, ease:"power2.out"}}, {t_w:.3f});')
+                js.append(f'tl.to("#cw-{gi}-{k - 1}", {{color:"#ffffff", scale:1, duration:{d_w:.3f}, ease:"power2.out", overwrite:"auto"}}, {t_w:.3f});')
     return html, js
 
 

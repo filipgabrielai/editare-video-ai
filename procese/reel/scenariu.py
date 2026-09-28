@@ -57,12 +57,19 @@ def corecteaza(ws: list[dict], corecturi: dict[str, str]) -> list[dict]:
         tinta = norm(gresit)
         n = len(tinta)
         for i in range(len(ws) - n + 1):
-            if [" ".join(w["n"]) for w in ws[i:i + n]] == tinta:
-                ultim = ws[i + n - 1]["text"]
-                punct = ultim[len(ultim.rstrip(".,?!;:")):]
-                ws[i]["text"] = corect + punct
-                for w in ws[i + 1:i + n]:
-                    w["text"] = ""
+            fereastra = ws[i:i + n]
+            if [" ".join(w["n"]) for w in fereastra[:-1]] != tinta[:-1] or fereastra[-1]["n"][:1] != tinta[-1:]:
+                continue
+            ultim = fereastra[-1]["text"]
+            if len(fereastra[-1]["n"]) > 1 and "-" in ultim:     # articolul legat: „Code-ul,” → „Claude Code-ul,”
+                coada = ultim[ultim.index("-"):]
+            elif len(fereastra[-1]["n"]) == 1:
+                coada = ultim[len(ultim.rstrip(".,?!;:")):]
+            else:
+                continue
+            ws[i]["text"] = corect + coada
+            for w in fereastra[1:]:
+                w["text"] = ""
     return ws
 
 

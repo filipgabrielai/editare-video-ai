@@ -36,6 +36,11 @@ class TestScenariu(unittest.TestCase):
         self.assertEqual(texte[texte.index("Claude Code") + 1], "")
         self.assertEqual(S.gaseste(ws, "Cloud Code")[0], 3.9)   # ancorele rămân pe transcript
 
+    def test_corectura_pastreaza_articolul_cu_cratima(self):
+        ws = [{"text": t, "start": k, "end": k + 0.5, "n": S.norm(t)} for k, t in enumerate(["am", "Cloud", "Code-ul,", "care"])]
+        texte = [w["text"] for w in S.corecteaza(ws, {"cloud code": "Claude Code"})]
+        self.assertEqual(texte, ["am", "Claude Code-ul,", "", "care"])
+
     def test_scenariul_bun_trece(self):
         self.assertEqual(S.valideaza(SC)[0], [])
 

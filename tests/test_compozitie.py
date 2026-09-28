@@ -53,6 +53,14 @@ class TestCompozitie(unittest.TestCase):
         css = (RAD / "stiluri" / "studio" / "reel.css").read_text(encoding="utf-8")
         self.assertIn(".card.compact{top:var(--compact-y)", css)
 
+    def test_culoarea_cuvintelor_nu_se_calca(self):
+        # două cuvinte rostite la 10 ms unul după altul: tween-ul următor preia culoarea, nu se suprapune cu primul
+        ws = [{"text": "Mi", "start": 0.04, "end": 0.05}, {"text": "se", "start": 0.05, "end": 0.2}, {"text": "pare", "start": 0.2, "end": 0.5}]
+        _, js = C.captions(C.grupuri(ws, []), 2.0, "#38bdf8")
+        culori = [x for x in js if "color:" in x]
+        self.assertTrue(culori)
+        self.assertTrue(all('overwrite:"auto"' in x for x in culori))
+
     def test_captions_sar_cuvintele_contopite(self):
         html = "".join(C.captions(C.grupuri(self.ws, []), 6.0, "#38bdf8")[0])
         self.assertIn("Claude Code", html)
