@@ -56,6 +56,11 @@ class TestCapete(unittest.TestCase):
         self.assertTrue(0.9 <= a0 <= 0.97, a0)
         self.assertTrue(1.99 <= a1 <= 2.05, a1)
 
+    def test_whisper_pune_cuvantul_prea_devreme(self):
+        # Whisper a pus „Și” cu 150 ms înainte de sunet; căutarea se oprea acolo și lăsa 0,25 s de liniște la tăietură
+        a0, _ = T.capete(self.rms(1.0, 2.0), 0.80, 1.98, 0.0, 1e9)
+        self.assertTrue(0.9 <= a0 <= 0.97, a0)
+
     def test_in_liniste_pragul_ramane_minus_50(self):
         self.assertEqual(T.prag(self.rms(1.0, 2.0)), T.PRAG)
 
