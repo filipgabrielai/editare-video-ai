@@ -55,3 +55,5 @@ jobs:
         run: python verificare/instalarea.py --fara-disc
       - name: Proba de 30 de secunde
         run: python tests/proba_30s.py
+      - name: Proba de reel cap-coadă
+        run: python tests/proba_reel.py
