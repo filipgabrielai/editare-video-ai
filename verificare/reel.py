@@ -20,7 +20,7 @@ from procese.reel import sunet  # noqa: E402
 from unelte import platforma  # noqa: E402
 
 SR = 8000
-LAG_MAX_MS, CORELATIE_MIN, LUFS_TINTA, LUFS_TOL = 10, 0.5, -14.0, 0.5
+LAG_MAX_MS, CORELATIE_MIN, CORELATIE_CLARA, LUFS_TINTA, LUFS_TOL = 10, 0.5, 0.7, -14.0, 0.5
 _AUDIO: dict[str, array.array] = {}
 
 
@@ -106,8 +106,11 @@ def evalueaza(r: Rezultat) -> Rezultat:
     r.probleme = []
     if r.negre:
         r.probleme.append(f"cadre negre la {', '.join(f'{a:.2f}' for a, _ in r.negre)} s")
-    for t, lag_ms, c in r.lag:
-        if c >= CORELATIE_MIN and abs(lag_ms) > LAG_MAX_MS:
+    # Randarea are și sunetele de card, care nu sunt în voce.wav: un punct cu corelație slabă poate arăta un decalaj fals.
+    # Un decalaj real e clar (corelație ≥ 0,7) sau apare în cel puțin două puncte.
+    decalate = [(t, lag_ms, c) for t, lag_ms, c in r.lag if c >= CORELATIE_MIN and abs(lag_ms) > LAG_MAX_MS]
+    for t, lag_ms, c in decalate:
+        if c >= CORELATIE_CLARA or len(decalate) >= 2:
             r.probleme.append(f"vocea decalată cu {lag_ms:+d} ms la {t:.2f} s")
     for c, s, dif in r.taieturi:
         if dif is None or dif > toleranta_taietura_ms(r.fps):

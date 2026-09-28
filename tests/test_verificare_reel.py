@@ -35,6 +35,17 @@ class TestVerificareReel(unittest.TestCase):
         r = V.evalueaza(V.Rezultat(negre=[], lag=[(1.0, 40, 0.2)], taieturi=[], lufs=-14.0))
         self.assertTrue(r.ok)
 
+    def test_un_punct_slab_langa_sunetele_de_card_nu_e_decalaj(self):
+        # reelul „Top 3”: 8 puncte la 0 ms, unul la +60 ms cu corelație 0,54 (fereastra prindea sunetul de card, care nu e în voce.wav)
+        lag = [(1.0, 0, 0.9), (6.15, 60, 0.54), (10.0, 0, 0.8), (15.0, 0, 0.85)]
+        self.assertTrue(V.evalueaza(V.Rezultat(negre=[], lag=lag, taieturi=[], lufs=-14.0)).ok)
+
+    def test_decalaj_clar_sau_repetat_nu_trece(self):
+        clar = [(1.0, 0, 0.9), (6.0, 50, 0.9)]
+        repetat = [(1.0, 50, 0.6), (6.0, 50, 0.55), (10.0, 0, 0.9)]
+        self.assertFalse(V.evalueaza(V.Rezultat(negre=[], lag=clar, taieturi=[], lufs=-14.0)).ok)
+        self.assertFalse(V.evalueaza(V.Rezultat(negre=[], lag=repetat, taieturi=[], lufs=-14.0)).ok)
+
     def test_un_cadru_pe_langa_la_60_fps_nu_trece(self):
         r = V.evalueaza(V.Rezultat(negre=[], lag=[], taieturi=[(1.0, 1.0 + 1 / 60, 1000 / 60)], lufs=-14.0, fps=60))
         self.assertFalse(r.ok)
