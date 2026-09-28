@@ -65,14 +65,20 @@ def prag(rms: list[float]) -> float:
     return max(PRAG, min(podea + 10, -38.0))
 
 
+def sustinut(rms: list[float], k: int, prag_db: float, inapoi: bool = False) -> bool:
+    """Sunet care ține (cel puțin 3 din 6 ferestre de 5 ms peste prag), nu un clic de buze sau de microfon de 5–10 ms."""
+    fereastra = rms[max(0, k - 5):k + 1] if inapoi else rms[k:k + 6]
+    return rms[k] > prag_db and sum(x > prag_db for x in fereastra) >= 3
+
+
 def capete(rms: list[float], s: float, e: float, lim_s: float, lim_e: float, prag_db: float = PRAG) -> tuple[float, float]:
     """Începutul și sfârșitul bucății, pe sunet (peste prag), cu pad-ul, fără să treacă de cuvintele vecine, pe grila de cadre."""
     i_s, i_e = int(s / PAS), int(e / PAS)
-    on = min([k for k in range(max(0, i_s - 70), min(len(rms), i_s + 30)) if rms[k] > prag_db], default=i_s)
+    on = min([k for k in range(max(0, i_s - 70), min(len(rms), i_s + 30)) if sustinut(rms, k, prag_db)], default=i_s)
     on = max(on, int(lim_s / PAS))
     off, tacere = i_e, 0
     for k in range(max(0, i_e - 30), min(len(rms), i_e + 24, int(lim_e / PAS))):
-        if rms[k] > prag_db:
+        if sustinut(rms, k, prag_db, inapoi=True):
             off, tacere = k, 0
         else:
             tacere += 1

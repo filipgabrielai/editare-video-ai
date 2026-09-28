@@ -45,6 +45,17 @@ class TestCapete(unittest.TestCase):
         self.assertTrue(0.9 <= a0 <= 0.97, a0)
         self.assertTrue(1.99 <= a1 <= 2.1, a1)
 
+    def test_clicurile_de_buze_nu_sunt_vorbire(self):
+        # un clic de 5–10 ms la −46 dB înainte de cuvânt lungea pauza de la tăietură la ~0,5 s (reelul „Top 3”)
+        rms = self.rms(1.0, 2.0)
+        for t in (0.70, 0.86, 0.865):
+            rms[round(t / T.PAS)] = -46.0
+        for t in (2.10, 2.105):
+            rms[round(t / T.PAS)] = -46.0
+        a0, a1 = T.capete(rms, 0.95, 1.98, 0.0, 1e9)
+        self.assertTrue(0.9 <= a0 <= 0.97, a0)
+        self.assertTrue(1.99 <= a1 <= 2.05, a1)
+
     def test_in_liniste_pragul_ramane_minus_50(self):
         self.assertEqual(T.prag(self.rms(1.0, 2.0)), T.PRAG)
 
