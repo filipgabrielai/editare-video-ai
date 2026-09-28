@@ -32,7 +32,7 @@ class TestProiect(unittest.TestCase):
             self.assertEqual(dosar.name, "reel-de-proba")
             self.assertEqual(sorted(harta), ["IMG_2", "clip01"])
             self.assertTrue((dosar / "lucru").is_dir())
-            self.assertEqual(json.load(open(dosar / "sursa.json", encoding="utf-8"))["clipuri"]["clip01"], str((sursa / "Clip ăsta.mp4").resolve()))
+            self.assertEqual(json.loads((dosar / "sursa.json").read_text(encoding="utf-8"))["clipuri"]["clip01"], str((sursa / "Clip ăsta.mp4").resolve()))
 
     def test_folder_fara_clipuri(self):
         with tempfile.TemporaryDirectory() as d, self.assertRaises(SystemExit):

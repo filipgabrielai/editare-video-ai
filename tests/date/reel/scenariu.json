@@ -1,0 +1,13 @@
+{
+ "titlu": "Productivitate cu AI",
+ "stil": "studio",
+ "cadru": {"shift": 120, "carduri_y": 370, "captions_y": 1480},
+ "corecturi": {"cloud code": "Claude Code"},
+ "carduri": [
+  {"id": "hook", "ancora": "start", "kicker": "PRODUCTIVITATE CU AI",
+   "randuri": [{"text": "câte lucruri faci cu **AI**", "icoana": "zap"},
+               {"text": "cât de **productiv** poți fi", "icoana": "chart-column", "ancora": "cât de productiv"}]},
+  {"id": "stanga", "ancora": "Aici în stânga", "kicker": "ÎN STÂNGA · CLAUDE CODE", "compact": true,
+   "chips": [{"text": "rulează", "ancora": "rulează"}, {"text": "verifică", "ancora": "verifică"}]}
+ ]
+}

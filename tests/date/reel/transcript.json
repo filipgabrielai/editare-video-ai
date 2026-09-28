@@ -1,0 +1,19 @@
+{"words": [
+ {"text": "Mi", "start": 0.10, "end": 0.22, "type": "word"},
+ {"text": "se", "start": 0.22, "end": 0.34, "type": "word"},
+ {"text": "pare", "start": 0.34, "end": 0.60, "type": "word"},
+ {"text": "incredibil", "start": 0.60, "end": 1.20, "type": "word"},
+ {"text": "cât", "start": 1.30, "end": 1.45, "type": "word"},
+ {"text": "de", "start": 1.45, "end": 1.55, "type": "word"},
+ {"text": "productiv", "start": 1.55, "end": 2.10, "type": "word"},
+ {"text": "poți", "start": 2.10, "end": 2.30, "type": "word"},
+ {"text": "fi.", "start": 2.30, "end": 2.60, "type": "word"},
+ {"text": "Aici,", "start": 3.00, "end": 3.25, "type": "word"},
+ {"text": "în", "start": 3.25, "end": 3.35, "type": "word"},
+ {"text": "stânga,", "start": 3.35, "end": 3.80, "type": "word"},
+ {"text": "Cloud", "start": 3.90, "end": 4.10, "type": "word"},
+ {"text": "Code", "start": 4.10, "end": 4.40, "type": "word"},
+ {"text": "rulează", "start": 4.60, "end": 5.10, "type": "word"},
+ {"text": "și", "start": 5.10, "end": 5.20, "type": "word"},
+ {"text": "verifică.", "start": 5.20, "end": 5.90, "type": "word"}
+]}

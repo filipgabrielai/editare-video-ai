@@ -13,7 +13,7 @@ from unelte import sunete  # noqa: E402
 
 class TestStil(unittest.TestCase):
     def test_studio_are_tot(self):
-        st = json.load(open(RAD / "stiluri" / "studio" / "stil.json", encoding="utf-8"))
+        st = json.loads((RAD / "stiluri" / "studio" / "stil.json").read_text(encoding="utf-8"))
         self.assertTrue(st["accent"].startswith("#"))
         css = (RAD / "stiluri" / "studio" / "reel.css").read_text(encoding="utf-8")
         for sel in (".card", ".card.compact", ".chip", ".cap", ".cw", "#titlu", "#captii", "var(--carduri-y)", "var(--captions-y)"):
@@ -25,7 +25,7 @@ class TestStil(unittest.TestCase):
         self.assertEqual(len(list((RAD / "fonturi").glob("OFL-*.txt"))), 3)
 
     def test_icoane(self):
-        ic = json.load(open(RAD / "stiluri" / "icoane.json", encoding="utf-8"))
+        ic = json.loads((RAD / "stiluri" / "icoane.json").read_text(encoding="utf-8"))
         self.assertIn("check", ic)
         self.assertTrue(all(v.startswith("<svg") for v in ic.values()))
 
