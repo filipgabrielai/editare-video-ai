@@ -3,7 +3,7 @@
 Sistemul meu de editare video, în română, pe care îl rulezi în Claude Code: de la clipurile brute la un reel pentru Instagram
 sau un video de YouTube gata de postat. E construit pe ce am învățat editând peste 20 de videouri cu el.
 
-**Stare:** în construcție. Versiunea 0.1 are instalarea și proba de 30 de secunde; editarea vine în versiunile următoare.
+**Stare:** în construcție. Are instalarea și editarea de reel; YouTube vine în versiunile următoare.
 
 ## Ce îți trebuie
 
@@ -16,6 +16,12 @@ sau un video de YouTube gata de postat. E construit pe ce am învățat editând
 1. Descarci repo-ul (butonul „Code” → „Download ZIP”, sau `git clone`) și îl dezarhivezi.
 2. Deschizi folderul în Claude Code.
 3. Scrii `/instalare` și aprobi comenzile pe care ți le propune. La final îți spune „Gata, poți edita.”
+
+## Editează un reel
+
+Pune clipurile brute într-un folder (duble, greșeli, tot) și scrie în Claude Code:
+`/editeaza-reel "<calea către folder>"`. Primești în `proiecte/` un reel 1080x1920 cu tăieturile, cardurile și captions,
+verificat, gata de postat după ce te uiți pe el.
 
 ## Cât costă
 
