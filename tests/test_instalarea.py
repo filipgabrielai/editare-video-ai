@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 RAD = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAD))
@@ -73,6 +74,30 @@ class TestDiscSiReparatii(unittest.TestCase):
     def test_comanda_python_pe_fiecare_sistem(self):
         self.assertTrue(I.repara("model", "windows").startswith("python "))
         self.assertTrue(I.repara("model", "mac").startswith("python3 "))
+
+
+class TestHomebrew(unittest.TestCase):
+    # Installerul Homebrew cere parola de sudo și un terminal real: din Claude Code nu poate rula, îl rulează omul în Terminal.
+    def test_homebrew_se_instaleaza_din_terminal(self):
+        r = I.repara("homebrew", "mac")
+        self.assertIn("Terminal", r)
+        self.assertIn("redeschide", r)
+
+    def test_homebrew_instalat_dar_nevazut_in_path(self):
+        with tempfile.TemporaryDirectory() as d:
+            brew = Path(d) / "brew"
+            brew.write_text("x")
+            with mock.patch.object(I.platforma, "sistem", return_value="mac"), mock.patch("shutil.which", return_value=None):
+                v = I.verifica_homebrew(cai=(brew,))
+        self.assertFalse(v.ok)
+        self.assertIn("shellenv", v.repara)
+        self.assertIn(str(brew), v.repara)
+
+    def test_homebrew_lipsa_cu_totul(self):
+        with mock.patch.object(I.platforma, "sistem", return_value="mac"), mock.patch("shutil.which", return_value=None):
+            v = I.verifica_homebrew(cai=(Path("/nu/exista/brew"),))
+        self.assertFalse(v.ok)
+        self.assertIn("Terminal", v.repara)
 
 
 class TestConsola(unittest.TestCase):

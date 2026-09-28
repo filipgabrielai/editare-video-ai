@@ -1,5 +1,13 @@
 # Depanare
 
+## Mac: Homebrew cere parola sau Claude nu-l poate instala
+Homebrew se instalează din aplicația Terminal, nu din Claude Code, pentru că îți cere parola de la Mac. Rulează comanda pe care
+ți-o dă verificarea, urmează pașii „Next steps” de la final, apoi închide și redeschide Claude Code.
+
+## Mac: am instalat Homebrew, dar verificarea zice că nu-l vede
+Pe Mac-urile cu procesor Apple, Homebrew trebuie adăugat o dată în ~/.zprofile. Verificarea îți dă exact linia de rulat în Terminal;
+după ea, închide și redeschide Claude Code.
+
 ## Windows: „winget nu e recunoscut”
 Windows 10 mai vechi nu are winget. Instalează „App Installer” din Microsoft Store, apoi redeschide Claude Code.
 

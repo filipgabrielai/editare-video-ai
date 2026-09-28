@@ -25,7 +25,8 @@ NODE_MINIM = (22,)
 DUPA_WINGET = " (după instalare, închide și redeschide Claude Code, ca Windows să-l vadă)"
 
 REPARA = {
-    "homebrew": {"mac": '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'},
+    "homebrew": {"mac": 'deschide aplicația Terminal și rulează: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+                        " (îți cere parola de la Mac; urmează pașii „Next steps” de la final), apoi închide și redeschide Claude Code"},
     "python": {"mac": "brew install python", "windows": "winget install -e --id Python.Python.3.12"},
     "node": {"mac": "brew install node", "windows": "winget install -e --id OpenJS.NodeJS.LTS"},
     "ffmpeg": {"mac": "brew install ffmpeg", "windows": "winget install -e --id Gyan.FFmpeg"},
@@ -75,11 +76,22 @@ def ruleaza(args: list[str]) -> str | None:
     return (r.stdout or "") + (r.stderr or "")
 
 
-def verifica_homebrew() -> Verificare | None:
+BREW_CAI = (Path("/opt/homebrew/bin/brew"), Path("/usr/local/bin/brew"))   # Apple Silicon, Intel
+
+
+def verifica_homebrew(cai: tuple[Path, ...] = BREW_CAI) -> Verificare | None:
+    """Homebrew îl instalează omul în Terminal (cere parola). Pe Apple Silicon, după instalare, brew nu e în PATH până nu
+    adaugă linia shellenv în ~/.zprofile: atunci îi spunem exact linia, nu din nou comanda de instalare."""
     if platforma.sistem() != "mac":
         return None
-    ok = shutil.which("brew") is not None
-    return Verificare("Homebrew", ok, "instalat" if ok else "lipsește (cu el se instalează restul pe Mac)", "" if ok else repara("homebrew"))
+    if shutil.which("brew"):
+        return Verificare("Homebrew", True, "instalat")
+    for cale in cai:
+        if cale.is_file():
+            return Verificare("Homebrew", False, f"instalat în {cale.parent}, dar Terminalul încă nu-l vede",
+                              f"deschide aplicația Terminal și rulează: echo 'eval \"$({cale} shellenv)\"' >> ~/.zprofile"
+                              ", apoi închide și redeschide Claude Code")
+    return Verificare("Homebrew", False, "lipsește (cu el se instalează restul pe Mac)", repara("homebrew"))
 
 
 def verifica_python(v: tuple[int, ...] = tuple(sys.version_info[:3])) -> Verificare:
