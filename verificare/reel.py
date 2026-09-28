@@ -20,7 +20,7 @@ from procese.reel import sunet  # noqa: E402
 from unelte import platforma  # noqa: E402
 
 SR = 8000
-LAG_MAX_MS, CORELATIE_MIN, TAIETURA_MAX_MS, LUFS_TINTA, LUFS_TOL = 10, 0.5, 17, -14.0, 0.5
+LAG_MAX_MS, CORELATIE_MIN, LUFS_TINTA, LUFS_TOL = 10, 0.5, -14.0, 0.5
 _AUDIO: dict[str, array.array] = {}
 
 
@@ -30,8 +30,17 @@ class Rezultat:
     lag: list
     taieturi: list
     lufs: float
+    fps: int = 60
+    durata: float = 0.0
+    durata_asteptata: float = 0.0
     ok: bool = True
     probleme: list = field(default_factory=list)
+
+
+def toleranta_taietura_ms(fps: int) -> float:
+    """Jumătate de cadru (plus 1 ms de rotunjire): o tăietură cu un cadru pe lângă pică, iar la 30 fps o tăietură de pe grila
+    de 60 fps, care cade între două cadre, trece."""
+    return 500 / fps + 1
 
 
 def audio(f: Path) -> array.array:
@@ -82,7 +91,7 @@ def potriveste(cuts: list[float], sc: list[float]) -> list[tuple[float, float | 
 
 
 def negre(f: Path) -> list[tuple[float, float]]:
-    r = subprocess.run(["ffmpeg", "-v", "info", "-i", str(f), "-vf", "blackdetect=d=0.05:pix_th=0.10", "-an", "-f", "null", "-"],
+    r = subprocess.run(["ffmpeg", "-v", "info", "-i", str(f), "-vf", "blackdetect=d=0.01:pix_th=0.10", "-an", "-f", "null", "-"],
                        capture_output=True, text=True, encoding="utf-8", errors="replace")
     return [(float(a), float(b)) for a, b in re.findall(r"black_start:([\d.]+) black_end:([\d.]+)", r.stderr)]
 
@@ -101,27 +110,45 @@ def evalueaza(r: Rezultat) -> Rezultat:
         if c >= CORELATIE_MIN and abs(lag_ms) > LAG_MAX_MS:
             r.probleme.append(f"vocea decalată cu {lag_ms:+d} ms la {t:.2f} s")
     for c, s, dif in r.taieturi:
-        if dif is None or dif > TAIETURA_MAX_MS:
+        if dif is None or dif > toleranta_taietura_ms(r.fps):
             r.probleme.append(f"tăietura de la {c:.3f} s nu cade pe imagine" + (f" ({dif:.0f} ms)" if dif is not None else ""))
+    if r.durata_asteptata and abs(r.durata - r.durata_asteptata) > 1.5 / r.fps:
+        r.probleme.append(f"durata {r.durata:.3f} s față de {r.durata_asteptata:.3f} s cât are tăietura")
     if abs(r.lufs - LUFS_TINTA) > LUFS_TOL:
         r.probleme.append(f"loudness {r.lufs:.1f} LUFS (trebuie {LUFS_TINTA:.0f} ± {LUFS_TOL})")
     r.ok = not r.probleme
     return r
 
 
-def verifica(f: Path, voce: Path, cuts: list[float]) -> Rezultat:
+def durata_video(f: Path) -> float:
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=duration", "-of", "csv=p=0", str(f)],
+                       capture_output=True, text=True, check=True)
+    return float(r.stdout.strip())
+
+
+def fps_video(f: Path) -> int:
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=r_frame_rate", "-of", "csv=p=0", str(f)],
+                       capture_output=True, text=True, check=True)
+    a, _, b = r.stdout.strip().partition("/")
+    return round(float(a) / float(b or 1))
+
+
+def verifica(f: Path, voce: Path, cuts: list[float], fps: int = 60, durata_asteptata: float | None = None) -> Rezultat:
     dur = sunet.durata_audio(f)
     lag = []
     for t0 in puncte(cuts, dur):
         l, c = xcorr(anvelopa(audio(f), t0, 2.0), anvelopa(audio(voce), t0, 2.0))
         lag.append((t0, l * 10, c))
-    return evalueaza(Rezultat(negre=negre(f), lag=lag, taieturi=potriveste(cuts, scene(f)), lufs=sunet.integrat(f)))
+    return evalueaza(Rezultat(negre=negre(f), lag=lag, taieturi=potriveste(cuts, scene(f)), lufs=sunet.integrat(f), fps=fps,
+                              durata=durata_video(f) if durata_asteptata else 0.0, durata_asteptata=durata_asteptata or 0.0))
 
 
 def raport(r: Rezultat) -> str:
     linii = [f"cadre negre: {len(r.negre)}"]
     linii += [f"  vocea la {t:6.2f} s: decalaj {l:+4d} ms, corelație {c:.2f}" for t, l, c in r.lag]
     linii += [f"  tăietura {c:6.3f} s: imagine {s if s is not None else '-'}, diferență {'-' if d is None else f'{d:.0f} ms'}" for c, s, d in r.taieturi]
+    if r.durata_asteptata:
+        linii.append(f"durata: {r.durata:.3f} s (tăietura: {r.durata_asteptata:.3f} s)")
     linii.append(f"loudness: {r.lufs:.1f} LUFS")
     linii.append("TRECE" if r.ok else "NU TRECE: " + "; ".join(r.probleme))
     return "\n".join(linii)
@@ -134,7 +161,7 @@ def main(argv: list[str] | None = None) -> int:
     dosar = f.parent
     with open(dosar / "taieturi.json", encoding="utf-8") as fh:
         cuts = json.load(fh)["taieturi"]
-    r = verifica(f, dosar / "voce.wav", cuts)
+    r = verifica(f, dosar / "voce.wav", cuts, fps_video(f), durata_video(dosar / "taiat.mp4"))
     print(raport(r))
     return 0 if r.ok else 1
 

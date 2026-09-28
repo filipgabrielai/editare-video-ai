@@ -33,6 +33,17 @@ class TestHyperframes(unittest.TestCase):
         self.assertEqual(HF.args_randare(Path("p"), Path("o.mp4"), 60, "high"),
                          ["render", "p", "--fps", "60", "--quality", "high", "-o", "o.mp4"])
 
+    def test_snapshot_nu_amesteca_cadre_vechi(self):
+        import subprocess
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            iesire = Path(d) / "planse"
+            iesire.mkdir()
+            (iesire / "frame-05-at-9.0s.png").write_text("de la compoziția trecută")
+            gata = subprocess.CompletedProcess([], 0, "", "")
+            with mock.patch.object(HF, "ruleaza", return_value=gata):
+                self.assertEqual(HF.snapshot(Path("p"), [1.0], iesire), [])
+
 
 if __name__ == "__main__":
     unittest.main()

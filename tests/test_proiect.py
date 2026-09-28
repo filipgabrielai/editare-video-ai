@@ -38,6 +38,25 @@ class TestProiect(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d, self.assertRaises(SystemExit):
             proiect.creeaza(Path(d))
 
+    def test_clipuri_schimbate_sterg_ce_s_a_calculat_din_cele_vechi(self):
+        # refilmezi „Clipul ăsta.mp4” în același folder: sunetul și cuvintele vechi nu au voie să rămână
+        with tempfile.TemporaryDirectory() as d:
+            sursa = Path(d) / "clipuri"
+            sursa.mkdir()
+            (sursa / "Clipul ăsta.mp4").write_text("vechi")
+            with mock.patch.object(proiect, "PROIECTE", Path(d) / "proiecte"):
+                dosar = proiect.creeaza(sursa)
+                (dosar / "lucru" / "clip01.wav").write_text("sunet vechi")
+                (dosar / "transcripte").mkdir()
+                (dosar / "duble.json").write_text("[]")
+                proiect.creeaza(sursa)                       # nimic schimbat: cache-ul rămâne
+                self.assertTrue((dosar / "lucru" / "clip01.wav").exists())
+                (sursa / "Clipul ăsta.mp4").write_text("filmat din nou, alt conținut")
+                proiect.creeaza(sursa)
+            self.assertFalse((dosar / "lucru" / "clip01.wav").exists())
+            self.assertFalse((dosar / "transcripte").exists())
+            self.assertFalse((dosar / "duble.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

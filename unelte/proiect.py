@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import unicodedata
 from pathlib import Path
 
@@ -33,15 +34,29 @@ def creeaza(sursa: Path, nume: str | None = None) -> Path:
     if not clipuri_brute:
         raise SystemExit(f"Nu am găsit clipuri video ({', '.join(VIDEO_EXT)}) în {sursa}.")
     dosar = PROIECTE / slug(nume or (sursa.stem if sursa.is_file() else sursa.name))
-    (dosar / "lucru").mkdir(parents=True, exist_ok=True)
     harta: dict[str, str] = {}
+    amprente: dict[str, list[int]] = {}
     for k, p in enumerate(clipuri_brute, 1):
         cheie = nume_clip(p.stem, k)
         if cheie in harta:
             cheie = f"{cheie}-{k}"
         harta[cheie] = str(p.resolve())
+        st = p.stat()
+        amprente[cheie] = [st.st_size, st.st_mtime_ns]
+    nou = {"sursa": str(sursa.resolve()), "clipuri": harta, "amprente": amprente}
+    if (dosar / "sursa.json").is_file():
+        vechi = json.loads((dosar / "sursa.json").read_text(encoding="utf-8"))
+        if {k: vechi.get(k) for k in ("clipuri", "amprente")} == {k: nou[k] for k in ("clipuri", "amprente")}:
+            print(f"Proiectul {dosar.name} există deja, cu aceleași clipuri: refolosesc ce e calculat.")
+        else:
+            # un clip refilmat sau alt folder cu același nume: sunetul și cuvintele vechi ar tăia clipul nou la timpii vechi
+            print(f"Clipurile din {dosar.name} s-au schimbat față de ultima rulare: refac dublele de la zero.")
+            shutil.rmtree(dosar / "lucru", ignore_errors=True)
+            shutil.rmtree(dosar / "transcripte", ignore_errors=True)
+            (dosar / "duble.json").unlink(missing_ok=True)
+    (dosar / "lucru").mkdir(parents=True, exist_ok=True)
     with open(dosar / "sursa.json", "w", encoding="utf-8") as f:
-        json.dump({"sursa": str(sursa.resolve()), "clipuri": harta}, f, ensure_ascii=False, indent=1)
+        json.dump(nou, f, ensure_ascii=False, indent=1)
     return dosar
 
 

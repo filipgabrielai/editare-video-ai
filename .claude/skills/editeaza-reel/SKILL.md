@@ -31,5 +31,6 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
    acoperă fața, textul nu iese din card, captions se citesc. Repari și reiei 7–8.
 9. **Randarea:** `python3 procese/reel/randeaza.py proiecte/<slug>`. Dacă verificarea spune „NU TRECE”, nu livrezi: repari
    cauza și randezi din nou.
-10. **Livrarea:** îi spui unde e fișierul, durata, ce ai verificat, ce ai scos și ce ai corectat. După OK-ul lui, redenumești în
-    „<Titlu> FINAL.mp4”. Nu publici și nu urci nimic.
+10. **Livrarea:** scrii `proiecte/<slug>/DESIGN.md` (ce ai ales și de ce: dublele, ce ai scos, cadrul, cardurile, corecturile);
+    `VERIFY.md` îl scrie randarea. Îi spui unde e fișierul, durata, ce ai verificat, ce ai scos și ce ai corectat. După OK-ul
+    lui, redenumești în „<Titlu> FINAL.mp4”. Nu publici și nu urci nimic.

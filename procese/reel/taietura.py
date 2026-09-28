@@ -56,14 +56,23 @@ def rms_db(raw: Path) -> list[float]:
     return [20 * math.log10(math.sqrt(sum(x * x for x in a[i:i + w]) / w) + 1e-9) for i in range(0, len(a) - w, w)]
 
 
-def capete(rms: list[float], s: float, e: float, lim_s: float, lim_e: float) -> tuple[float, float]:
-    """Începutul și sfârșitul bucății, pe sunet (−50 dB), cu pad-ul, fără să treacă de cuvintele vecine, pe grila de cadre."""
+def prag(rms: list[float]) -> float:
+    """Pragul de sunet al clipului: −50 dB în liniște (ca la Filip), dar peste zgomotul camerei (ventilator, stradă), altfel tot
+    zgomotul e „vorbire” și pauza de la tăietură crește de la 0,06–0,10 s la ~0,5 s. Plafonat la −38 dB, pragul dublelor."""
+    if not rms:
+        return PRAG
+    podea = sorted(rms)[len(rms) // 10]
+    return max(PRAG, min(podea + 10, -38.0))
+
+
+def capete(rms: list[float], s: float, e: float, lim_s: float, lim_e: float, prag_db: float = PRAG) -> tuple[float, float]:
+    """Începutul și sfârșitul bucății, pe sunet (peste prag), cu pad-ul, fără să treacă de cuvintele vecine, pe grila de cadre."""
     i_s, i_e = int(s / PAS), int(e / PAS)
-    on = min([k for k in range(max(0, i_s - 70), min(len(rms), i_s + 30)) if rms[k] > PRAG], default=i_s)
+    on = min([k for k in range(max(0, i_s - 70), min(len(rms), i_s + 30)) if rms[k] > prag_db], default=i_s)
     on = max(on, int(lim_s / PAS))
     off, tacere = i_e, 0
     for k in range(max(0, i_e - 30), min(len(rms), i_e + 24, int(lim_e / PAS))):
-        if rms[k] > PRAG:
+        if rms[k] > prag_db:
             off, tacere = k, 0
         else:
             tacere += 1
@@ -112,8 +121,10 @@ def main(argv: list[str] | None = None) -> int:
         lim_s = ws[i0 - 1]["end"] + off + 0.02 if i0 > 0 else 0.0
         lim_e = ws[i1 + 1]["start"] + off - 0.02 if i1 + 1 < len(ws) else 1e9
         if d["clip"] not in rms_cache:
-            rms_cache[d["clip"]] = rms_db(dosar / "lucru" / f"{d['clip']}.raw")
-        a0, a1 = capete(rms_cache[d["clip"]], s, e, lim_s, lim_e)
+            r = rms_db(dosar / "lucru" / f"{d['clip']}.raw")
+            rms_cache[d["clip"]] = (r, prag(r))
+        rms, prag_clip = rms_cache[d["clip"]]
+        a0, a1 = capete(rms, s, e, lim_s, lim_e, prag_clip)
         seg.append((d["clip"], a0, a1))
         for w in ws[i0:i1 + 1]:
             cuvinte_reel.append({"text": w["text"], "start": round(w["start"] + off - a0 + acc, 3),

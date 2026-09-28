@@ -61,6 +61,17 @@ class TestCompozitie(unittest.TestCase):
         self.assertTrue(culori)
         self.assertTrue(all('overwrite:"auto"' in x for x in culori))
 
+    def test_captions_nu_ajung_la_butoane(self):
+        # trei cuvinte lungi la 58 px trec de x = 950, unde încep butoanele din dreapta
+        ws = [{"text": t, "start": k * 0.5, "end": k * 0.5 + 0.45} for k, t in enumerate(["îmbunătățește", "videoclipurile", "automat"])]
+        gr = C.grupuri(ws, [])
+        self.assertTrue(all(len(" ".join(w["text"] for w in g)) <= C.MAX_CAR for g in gr))
+        self.assertEqual(len(gr), 2)
+
+    def test_lint_picat_arata_tot(self):
+        self.assertEqual(C.mesaj_lint(True, "linia 1\n◇  0 errors"), "◇  0 errors")
+        self.assertEqual(C.mesaj_lint(False, "✖ missing_timeline: ...\n◇  1 error"), "✖ missing_timeline: ...\n◇  1 error")
+
     def test_captions_sar_cuvintele_contopite(self):
         html = "".join(C.captions(C.grupuri(self.ws, []), 6.0, "#38bdf8")[0])
         self.assertIn("Claude Code", html)

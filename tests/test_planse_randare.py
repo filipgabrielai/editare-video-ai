@@ -33,6 +33,22 @@ class TestRandare(unittest.TestCase):
             (Path(d) / "Top [AI] DRAFT 1.mp4").write_text("x")
             self.assertEqual(randeaza.urmatorul_draft(Path(d), "Top [AI]").name, "Top [AI] DRAFT 2.mp4")
 
+    def test_titlu_cu_caractere_interzise_pe_windows(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(randeaza.urmatorul_draft(Path(d), "Claude vs ChatGPT: 3 diferențe?").name,
+                             "Claude vs ChatGPT 3 diferențe DRAFT 1.mp4")
+            self.assertEqual(randeaza.urmatorul_draft(Path(d), 'a/b\\c*"d"<e>|').name, "abcde DRAFT 1.mp4")
+
+    def test_verify_md_cu_cifrele(self):
+        from verificare import reel as V
+        with tempfile.TemporaryDirectory() as d:
+            r = V.evalueaza(V.Rezultat(negre=[], lag=[(1.0, 0, 0.9)], taieturi=[(1.0, 1.0, 0.0)], lufs=-14.1))
+            randeaza.scrie_verify(Path(d), Path(d) / "Reel DRAFT 1.mp4", r)
+            text = (Path(d) / "VERIFY.md").read_text(encoding="utf-8")
+        self.assertIn("Reel DRAFT 1.mp4", text)
+        self.assertIn("-14.1 LUFS", text)
+        self.assertIn("TRECE", text)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -21,6 +21,7 @@ from procese.reel import scenariu as S  # noqa: E402
 from unelte import hyperframes, platforma  # noqa: E402
 
 FPS = 60
+MAX_CAR = 22   # un grup de captions mai lung (la 58 px, centrat) ajunge peste butoanele din dreapta, de la x = 950
 ROT = {"card": ["boom", "knock"], "pop": ["pop", "thump", "click"]}
 VOL = {"boom": (0.8, 0.6), "knock": (0.7, 0.25), "pop": (0.55, 0.15), "thump": (0.6, 0.25), "click": (0.55, 0.12)}
 
@@ -58,7 +59,8 @@ def grupuri(ws: list[dict], cuts: list[float], max_n: int = 3) -> list[list[dict
             gap = w["start"] - cur[-1]["end"]
             taiat = any(cur[-1]["start"] < c <= w["start"] + 0.02 for c in cuts)
             plin = len(cur) >= max_n and (cur[-1]["end"] - cur[0]["start"] >= 0.35 or len(cur) >= max_n + 2)
-            if plin or gap > 0.35 or taiat or cur[-1]["text"].rstrip()[-1:] in ".,?!":
+            lat = len(" ".join(x["text"] for x in cur + [w])) > MAX_CAR
+            if plin or lat or gap > 0.35 or taiat or cur[-1]["text"].rstrip()[-1:] in ".,?!":
                 out.append(cur)
                 cur = []
         cur.append(w)
@@ -169,6 +171,14 @@ def captions(gr: list[list[dict]], durata: float, accent: str) -> tuple[list[str
     return html, js
 
 
+def mesaj_lint(ok: bool, iesire: str) -> str:
+    """Când trece, ajunge ultima linie; când pică, tot, ca să se vadă ce regulă a picat și unde."""
+    iesire = iesire.strip()
+    if not iesire:
+        return ""
+    return iesire.splitlines()[-1] if ok else iesire
+
+
 def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata: float) -> str:
     c = {"shift": 120, "carduri_y": 370 if sc.get("titlu") else 280, "captions_y": 1480, **sc.get("cadru", {})}
     compact_y = 340 if sc.get("titlu") else S.ZONA_SUS   # cu titlu (262–330 px), cardul compact stă sub el
@@ -257,7 +267,7 @@ def main(argv: list[str] | None = None) -> int:
     beats = ["# Beat-uri", "", "| t | ce apare |", "|---|---|"] + [f"| {t:.2f} | {x} |" for t, x in plan["beats"]]
     (dosar / "BEATS.md").write_text("\n".join(beats) + "\n", encoding="utf-8")
     ok, iesire = hyperframes.lint(dosar)
-    print(iesire.strip().splitlines()[-1] if iesire.strip() else "")
+    print(mesaj_lint(ok, iesire))
     for t, x in plan["beats"]:
         print(f"  {t:6.2f}  {x}")
     return 0 if ok else 1

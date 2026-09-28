@@ -19,9 +19,23 @@ from unelte import hyperframes, platforma  # noqa: E402
 from verificare import reel as verificare_reel  # noqa: E402
 
 
+def nume_fisier(titlu: str) -> str:
+    """Titlul ca nume de fișier: fără caracterele interzise pe Windows (<>:"/\\|?*), fără punct sau spațiu la final."""
+    t = re.sub(r"\s+", " ", re.sub(r'[<>:"/\\|?*]', "", titlu)).strip(" .")
+    return t or "reel"
+
+
 def urmatorul_draft(dosar: Path, titlu: str) -> Path:
+    titlu = nume_fisier(titlu)
     nr = [int(m.group(1)) for p in dosar.glob(f"{glob.escape(titlu)} DRAFT *.mp4") if (m := re.search(r"DRAFT (\d+)\.mp4$", p.name))]
     return dosar / f"{titlu} DRAFT {max(nr, default=0) + 1}.mp4"
+
+
+def scrie_verify(dosar: Path, draft: Path, r: verificare_reel.Rezultat) -> Path:
+    """VERIFY.md în proiect: ce s-a verificat pe draft, cu cifre."""
+    tinta = dosar / "VERIFY.md"
+    tinta.write_text(f"# Verificare: {draft.name}\n\n```\n{verificare_reel.raport(r)}\n```\n", encoding="utf-8")
+    return tinta
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -42,8 +56,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{iesire.name}: vocea la {lufs:.1f} LUFS. Verific...", flush=True)
     with open(dosar / "taieturi.json", encoding="utf-8") as f:
         cuts = json.load(f)["taieturi"]
-    r = verificare_reel.verifica(iesire, dosar / "voce.wav", cuts)
+    r = verificare_reel.verifica(iesire, dosar / "voce.wav", cuts, a.fps, verificare_reel.durata_video(dosar / "taiat.mp4"))
     print(verificare_reel.raport(r))
+    scrie_verify(dosar, iesire, r)
     return 0 if r.ok else 1
 
 

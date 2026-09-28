@@ -36,6 +36,18 @@ class TestCapete(unittest.TestCase):
         _, a1 = T.capete(self.rms(1.0, 2.5), 1.02, 1.98, 0.0, 2.2)
         self.assertLessEqual(a1, 2.2)
 
+    def test_camera_cu_zgomot_nu_lungeste_pauzele(self):
+        # ventilator de laptop la −45 dB: cu pragul fix de −50 dB tot zgomotul era „vorbire” și pauza creștea la ~0,5 s
+        rms = [(-20.0 if 1.0 <= k * T.PAS < 2.0 else -45.0) for k in range(int(4 / T.PAS))]
+        prag = T.prag(rms)
+        self.assertGreater(prag, -45.0)
+        a0, a1 = T.capete(rms, 1.02, 1.98, 0.0, 1e9, prag)
+        self.assertTrue(0.9 <= a0 <= 0.97, a0)
+        self.assertTrue(1.99 <= a1 <= 2.1, a1)
+
+    def test_in_liniste_pragul_ramane_minus_50(self):
+        self.assertEqual(T.prag(self.rms(1.0, 2.0)), T.PRAG)
+
 
 class TestFiltre(unittest.TestCase):
     def test_umple_9_16_fara_deformare_si_exact_pe_cadre(self):

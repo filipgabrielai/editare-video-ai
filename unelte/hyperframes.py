@@ -53,6 +53,8 @@ def lint(dosar: Path) -> tuple[bool, str]:
 
 def snapshot(dosar: Path, momente: list[float], iesire: Path) -> list[Path]:
     iesire.mkdir(parents=True, exist_ok=True)
+    for vechi in [*iesire.glob("frame-*.png"), *iesire.glob("contact-sheet.jpg")]:   # altfel planșa amestecă cadre din compoziția trecută
+        vechi.unlink()
     r = ruleaza(args_snapshot(dosar, momente, iesire), timeout=1800, capteaza=True)
     if r.returncode != 0:
         coada = " ".join(((r.stderr or r.stdout) or "").strip().splitlines()[-3:])
