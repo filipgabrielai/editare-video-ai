@@ -13,3 +13,5 @@ procesul din acest repo. Vorbești în română, scurt și clar, pentru cineva c
 ## Ușile
 
 - `/instalare`: verifică și instalează tot ce trebuie, apoi rulează proba de 30 de secunde.
+
+Dacă ceva nu merge la instalare, citește `docs/DEPANARE.md` înainte să improvizezi.
