@@ -56,5 +56,14 @@ class TestPlatforma(unittest.TestCase):
             self.assertTrue(platforma.whisper_complet(Path(d)))
 
 
+    def test_cale_pentru_unealta_relativa_si_fara_diacritice(self):
+        # whisper.cpp pe Windows citește argumentele în codepage-ul vechi: „ș” și „ț” devin „?” și fișierul nu mai e găsit
+        with tempfile.TemporaryDirectory(prefix="Ștefan ăî ") as d:
+            baza = Path(d)
+            self.assertEqual(platforma.cale_pentru_unealta(baza / "modele" / "ggml-tiny.bin", baza), os.path.join("modele", "ggml-tiny.bin"))
+            with self.assertRaises(ValueError):
+                platforma.cale_pentru_unealta(baza / "filmări" / "a.wav", baza)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -49,5 +49,21 @@ class TestComandaRandare(unittest.TestCase):
         self.assertIn("ggml.dll missing", str(e.exception))
 
 
+    def test_whisper_primeste_cai_relative_fara_diacritice(self):
+        prinse = {}
+
+        def run(args, **kw):
+            prinse["args"], prinse["cwd"] = args, kw.get("cwd")
+            return subprocess.CompletedProcess(args, 0, stdout="mi se pare incredibil", stderr="")
+
+        rad = P.platforma.RADACINA
+        with mock.patch.object(P.platforma, "gaseste", return_value="whisper-cli"), mock.patch("subprocess.run", side_effect=run):
+            P.transcrie(rad / "tests" / "date" / "proba.wav", rad / "modele" / "ggml-tiny.bin")
+        self.assertEqual(Path(prinse["cwd"]), rad)
+        self.assertTrue(all(a.isascii() for a in prinse["args"][1:]), prinse["args"])
+        self.assertFalse(Path(prinse["args"][prinse["args"].index("-f") + 1]).is_absolute())
+        self.assertFalse(Path(prinse["args"][prinse["args"].index("-m") + 1]).is_absolute())
+
+
 if __name__ == "__main__":
     unittest.main()

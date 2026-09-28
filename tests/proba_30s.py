@@ -38,8 +38,10 @@ def transcrie(wav: Path, model: Path) -> str:
     cli = platforma.gaseste("whisper-cli")
     if not cli:
         raise SystemExit("whisper-cli lipsește: rulează verificarea (verificare/instalarea.py).")
-    r = subprocess.run([cli, "-m", str(model), "-l", "ro", "-np", "-nt", "-f", str(wav)],
-                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
+    baza = platforma.RADACINA   # pornit din repo, cu căi relative: vezi platforma.cale_pentru_unealta
+    r = subprocess.run([cli, "-m", platforma.cale_pentru_unealta(model, baza), "-l", "ro", "-np", "-nt",
+                        "-f", platforma.cale_pentru_unealta(wav, baza)],
+                       cwd=baza, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
     if r.returncode != 0:
         coada = " ".join((r.stderr or r.stdout or "").strip().splitlines()[-3:])
         raise SystemExit(f"whisper-cli nu a pornit (cod {r.returncode}): {coada}. Rulează verificarea: verificare/instalarea.py.")

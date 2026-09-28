@@ -38,6 +38,20 @@ def whisper_complet(dosar: Path) -> bool:
     return all((dosar / exe(n)).is_file() for n in WHISPER_EXE)
 
 
+def cale_pentru_unealta(cale: Path, baza: Path) -> str:
+    """Calea pe care o dăm lui whisper.cpp: relativă la folderul din care îl pornim (cwd=baza).
+    Pe Windows, whisper.cpp citește argumentele în codepage-ul vechi (ANSI), deci un „ș” sau „ț” din cale (C:\\Users\\Ștefan\\…)
+    devine „?” și fișierul nu mai e găsit. Relativ la repo, numele sunt ASCII; dacă nu sunt, spunem clar ce e de făcut."""
+    try:
+        rel = os.path.relpath(cale, baza)
+    except ValueError:   # pe Windows, alt disc decât repo-ul
+        rel = str(cale)
+    if not rel.isascii():
+        raise ValueError(f"Calea „{rel}” are diacritice sau caractere speciale, pe care whisper.cpp nu le poate citi pe Windows. "
+                         "Mută fișierul într-un folder cu nume fără diacritice.")
+    return rel
+
+
 def model_whisper() -> Path:
     """Modelul Whisper folosit: EDITARE_MODEL (numele fișierului din modele/) sau large-v3-turbo."""
     return MODELE / os.environ.get("EDITARE_MODEL", MODEL_IMPLICIT)
