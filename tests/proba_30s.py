@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -15,7 +14,7 @@ import unicodedata
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from unelte import platforma  # noqa: E402
+from unelte import hyperframes, platforma  # noqa: E402
 
 DATE = Path(__file__).resolve().parent / "date"
 CUVINTE = ("incredibil", "productiv")   # proba.wav: „Mi se pare incredibil câte lucruri poți să faci cu ea și cât de productiv poți să fii.”
@@ -49,18 +48,12 @@ def transcrie(wav: Path, model: Path) -> str:
 
 
 def comanda_randare(dosar: Path, iesire: Path) -> list[str]:
-    """Randarea pornește `node` direct pe intrarea pachetului, nu prin `npx`: pe Windows npx e un .cmd, iar cmd.exe taie
-    calea „C:\\Program Files\\…” la primul spațiu când și argumentele au spații (folderul temporar, „C:\\Users\\Ion Popescu”)."""
-    node = shutil.which("node")
-    if not node:
-        raise SystemExit("Node.js lipsește: rulează verificarea (verificare/instalarea.py), îți spune cum îl instalezi.")
-    intrare = platforma.RADACINA / "node_modules" / "hyperframes" / "bin" / "hyperframes.mjs"
-    return [node, str(intrare), "render", str(dosar), "--fps", "30", "--quality", "draft", "-o", str(iesire)]
+    """Randarea probei (30 fps, draft) prin unelte/hyperframes.py: `node` direct, nu npx (vezi acolo de ce)."""
+    return hyperframes.comanda(*hyperframes.args_randare(dosar, iesire, 30, "draft"))
 
 
 def mediu_randare() -> dict[str, str]:
-    """Mediul pentru randare, cu telemetria HyperFrames oprită: nimic nu pleacă de pe calculatorul omului."""
-    return {**os.environ, "HYPERFRAMES_NO_TELEMETRY": "1"}
+    return hyperframes.mediu()
 
 
 def randeaza(dosar: Path, iesire: Path) -> int:
