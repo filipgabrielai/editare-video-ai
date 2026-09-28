@@ -171,6 +171,7 @@ def captions(gr: list[list[dict]], durata: float, accent: str) -> tuple[list[str
 
 def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata: float) -> str:
     c = {"shift": 120, "carduri_y": 370 if sc.get("titlu") else 280, "captions_y": 1480, **sc.get("cadru", {})}
+    compact_y = 340 if sc.get("titlu") else S.ZONA_SUS   # cu titlu (262–330 px), cardul compact stă sub el
     sfx = "\n".join(f'  <audio id="sfx-{i}" data-start="{t:.3f}" data-duration="{d:.3f}" data-track-index="{20 + i}" '
                     f'src="assets/sunete/{n}.wav" data-volume="{v}"></audio>' for i, (t, n, v, d) in enumerate(sorted(plan["sfx"])))
     linii_js = "\n".join("    " + x for x in plan["js"] + cap_js)
@@ -181,7 +182,7 @@ def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata:
 <link rel="stylesheet" href="assets/stil.css">
 </head><body>
 <div id="reel" data-composition-id="reel" data-start="0" data-duration="{durata:.3f}" data-width="1080" data-height="1920"
-  style="--shift:{c['shift']}px;--carduri-y:{c['carduri_y']}px;--captions-y:{c['captions_y']}px">
+  style="--shift:{c['shift']}px;--carduri-y:{c['carduri_y']}px;--captions-y:{c['captions_y']}px;--compact-y:{compact_y}px">
   <div id="fund" class="clip" data-start="0" data-duration="{durata:.3f}" data-track-index="0"></div>
   <div id="stage">
     <video id="vid" class="clip" data-start="0" data-duration="{durata:.3f}" data-track-index="1" src="taiat.mp4" muted playsinline></video>

@@ -19,7 +19,7 @@ html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--f
 .card{position:absolute;left:50%;top:var(--carduri-y);z-index:20;opacity:0;min-width:600px;max-width:1010px;white-space:nowrap;
   padding:22px 36px 24px;border-radius:32px;background:rgba(4,8,16,.86);border:1.5px solid rgba(var(--accent-rgb),.45);
   box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 60px rgba(var(--accent-rgb),.22),inset 0 1px 0 rgba(255,255,255,.1)}
-.card.compact{top:262px;padding:14px 28px 16px;min-width:0}
+.card.compact{top:var(--compact-y);padding:14px 28px 16px;min-width:0}
 .card .k{font-family:var(--font-mono);font-size:24px;letter-spacing:.2em;color:var(--accent);margin-bottom:8px;font-weight:600}
 .card .row{display:flex;align-items:center;gap:18px;min-height:84px}
 .card.compact .row{min-height:66px;gap:14px}

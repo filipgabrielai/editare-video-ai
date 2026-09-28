@@ -1,0 +1,38 @@
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from procese.reel import planse, randeaza  # noqa: E402
+
+
+class TestPlanse(unittest.TestCase):
+    def test_zonele_instagram(self):
+        f = planse.filtru_zone()
+        self.assertIn("drawbox=x=0:y=0:w=1080:h=260", f)
+        self.assertIn("y=1640", f)
+        self.assertIn("x=950:y=1120", f)
+
+    def test_momente_intrare_mijloc_iesire(self):
+        m = planse.momente([{"id": "a", "intra": 0.05, "iese": 4.0}, {"id": "b", "intra": 4.08, "iese": 5.0}])
+        self.assertEqual(m, [0.65, 2.02, 3.7, 4.54, 4.68, 4.7])   # (0,05+4)/2 = 2,025 e în binar 2,02499…
+
+
+class TestRandare(unittest.TestCase):
+    def test_draftul_urmator(self):
+        with tempfile.TemporaryDirectory() as d:
+            dosar = Path(d)
+            self.assertEqual(randeaza.urmatorul_draft(dosar, "Reel ăî").name, "Reel ăî DRAFT 1.mp4")
+            (dosar / "Reel ăî DRAFT 1.mp4").write_text("x")
+            (dosar / "Reel ăî DRAFT 3.mp4").write_text("x")
+            self.assertEqual(randeaza.urmatorul_draft(dosar, "Reel ăî").name, "Reel ăî DRAFT 4.mp4")
+
+    def test_titlu_cu_paranteze_patrate(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "Top [AI] DRAFT 1.mp4").write_text("x")
+            self.assertEqual(randeaza.urmatorul_draft(Path(d), "Top [AI]").name, "Top [AI] DRAFT 2.mp4")
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -45,6 +45,14 @@ class TestCompozitie(unittest.TestCase):
         self.assertNotIn('"#c-hook-r0", {height', js)       # primul rând e static
         self.assertIn('tl.set("#stage", {scale:1.06}, 2.7990);', js)   # zoom pe grila de cadre
 
+    def test_cardul_compact_nu_intra_sub_titlu(self):
+        plan = C.planifica(self.sc, self.ws, [], 6.0, S.stil("studio"))
+        self.assertIn("--compact-y:340px", C.pagina(self.sc, plan, [], [], 6.0))
+        fara_titlu = {k: v for k, v in self.sc.items() if k != "titlu"}
+        self.assertIn("--compact-y:262px", C.pagina(fara_titlu, plan, [], [], 6.0))
+        css = (RAD / "stiluri" / "studio" / "reel.css").read_text(encoding="utf-8")
+        self.assertIn(".card.compact{top:var(--compact-y)", css)
+
     def test_captions_sar_cuvintele_contopite(self):
         html = "".join(C.captions(C.grupuri(self.ws, []), 6.0, "#38bdf8")[0])
         self.assertIn("Claude Code", html)
