@@ -52,24 +52,33 @@ def gaseste(ws: list[dict], fraza: str, de_la: float = 0.0) -> tuple[float, floa
 
 
 def corecteaza(ws: list[dict], corecturi: dict[str, str]) -> list[dict]:
-    """Corecturile de afișare în captions („cloud code” → „Claude Code”). Ancorele rămân pe textul din transcript (câmpul n)."""
+    """Corecturile de afișare în captions („cloud code” → „Claude Code”). Potrivirea merge pe bucățile de cuvânt, nu pe cuvinte
+    întregi, fiindcă Whisper sparge greșelile altfel („unelte AI” → „un LTE-AI”). Articolul legat rămâne („Code-ul,” →
+    „Claude Code-ul,”). Ancorele rămân pe textul din transcript (câmpul n)."""
     for gresit, corect in corecturi.items():
         tinta = norm(gresit)
-        n = len(tinta)
-        for i in range(len(ws) - n + 1):
-            fereastra = ws[i:i + n]
-            if [" ".join(w["n"]) for w in fereastra[:-1]] != tinta[:-1] or fereastra[-1]["n"][:1] != tinta[-1:]:
+        if not tinta:
+            continue
+        plat = [(i, j) for i, w in enumerate(ws) for j in range(len(w["n"]))]   # (cuvântul, a câta bucată din el)
+        k = 0
+        while k <= len(plat) - len(tinta):
+            bucati = plat[k:k + len(tinta)]
+            if [ws[i]["n"][j] for i, j in bucati] != tinta or bucati[0][1] != 0 or not ws[bucati[0][0]]["text"]:
+                k += 1
                 continue
-            ultim = fereastra[-1]["text"]
-            if len(fereastra[-1]["n"]) > 1 and "-" in ultim:     # articolul legat: „Code-ul,” → „Claude Code-ul,”
+            i0, (i1, j1) = bucati[0][0], bucati[-1]
+            ultim = ws[i1]["text"]
+            if j1 < len(ws[i1]["n"]) - 1:            # se oprește în mijlocul cuvântului: păstrăm restul, de la cratimă
+                if "-" not in ultim:
+                    k += 1
+                    continue
                 coada = ultim[ultim.index("-"):]
-            elif len(fereastra[-1]["n"]) == 1:
-                coada = ultim[len(ultim.rstrip(".,?!;:")):]
             else:
-                continue
-            ws[i]["text"] = corect + coada
-            for w in fereastra[1:]:
+                coada = ultim[len(ultim.rstrip(".,?!;:")):]
+            ws[i0]["text"] = corect + coada
+            for w in ws[i0 + 1:i1 + 1]:
                 w["text"] = ""
+            k += len(tinta)
     return ws
 
 

@@ -41,6 +41,12 @@ class TestScenariu(unittest.TestCase):
         texte = [w["text"] for w in S.corecteaza(ws, {"cloud code": "Claude Code"})]
         self.assertEqual(texte, ["am", "Claude Code-ul,", "", "care"])
 
+    def test_corectura_peste_granita_de_cuvinte(self):
+        # Whisper aude „unelte AI” ca „un LTE-AI”: greșeala nu se potrivește cuvânt cu cuvânt
+        ws = [{"text": t, "start": k, "end": k + 0.5, "n": S.norm(t)} for k, t in enumerate(["Top", "3", "un", "LTE-AI", "pentru", "CloudCo."])]
+        texte = [w["text"] for w in S.corecteaza(ws, {"un lte ai": "unelte AI", "cloudco": "Claude Code"})]
+        self.assertEqual(texte, ["Top", "3", "unelte AI", "", "pentru", "Claude Code."])
+
     def test_scenariul_bun_trece(self):
         self.assertEqual(S.valideaza(SC)[0], [])
 
