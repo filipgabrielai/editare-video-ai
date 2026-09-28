@@ -1,0 +1,43 @@
+name: teste
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  instalare:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      EDITARE_MODEL: ggml-tiny.bin
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: ffmpeg și whisper.cpp (Mac)
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg whisper-cpp
+      - name: ffmpeg (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ffmpeg -y --no-progress
+      - name: whisper.cpp (Windows)
+        if: runner.os == 'Windows'
+        run: python instalare/descarca.py whisper
+      - name: Modelul mic
+        run: python instalare/descarca.py model --nume ggml-tiny.bin
+      - name: Pachetele
+        run: npm install
+      - name: Testele unitare
+        run: python -m unittest discover -s tests -t . -p "test_*.py" -v
+      - name: Verificarea instalării
+        run: python verificare/instalarea.py --fara-disc
+      - name: Proba de 30 de secunde
+        run: python tests/proba_30s.py
