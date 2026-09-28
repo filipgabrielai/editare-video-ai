@@ -1,0 +1,11 @@
+node_modules/
+modele/
+unelte/whisper/
+proiecte/*
+!proiecte/.gitkeep
+*.part
+__pycache__/
+.DS_Store
+.env
+renders/
+.superpowers/

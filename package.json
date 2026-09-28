@@ -1,0 +1,12 @@
+{
+  "name": "editare-video-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistemul de editare video în română, cu Claude Code și HyperFrames.",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "gsap": "3.14.2",
+    "hyperframes": "0.7.109"
+  }
+}
