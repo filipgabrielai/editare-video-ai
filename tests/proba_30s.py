@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -42,13 +43,24 @@ def transcrie(wav: Path, model: Path) -> str:
     return " ".join((r.stdout or "").split())
 
 
+def comanda_randare(dosar: Path, iesire: Path) -> list[str]:
+    """Randarea pornește `node` direct pe intrarea pachetului, nu prin `npx`: pe Windows npx e un .cmd, iar cmd.exe taie
+    calea „C:\\Program Files\\…” la primul spațiu când și argumentele au spații (folderul temporar, „C:\\Users\\Ion Popescu”)."""
+    node = shutil.which("node")
+    if not node:
+        raise SystemExit("Node.js lipsește: rulează verificarea (verificare/instalarea.py), îți spune cum îl instalezi.")
+    intrare = platforma.RADACINA / "node_modules" / "hyperframes" / "bin" / "hyperframes.mjs"
+    return [node, str(intrare), "render", str(dosar), "--fps", "30", "--quality", "draft", "-o", str(iesire)]
+
+
+def mediu_randare() -> dict[str, str]:
+    """Mediul pentru randare, cu telemetria HyperFrames oprită: nimic nu pleacă de pe calculatorul omului."""
+    return {**os.environ, "HYPERFRAMES_NO_TELEMETRY": "1"}
+
+
 def randeaza(dosar: Path, iesire: Path) -> int:
-    npx = shutil.which("npx")
-    if not npx:
-        raise SystemExit("npx lipsește: instalează Node.js (verificare/instalarea.py îți spune cum).")
     shutil.copy(platforma.RADACINA / "node_modules" / "gsap" / "dist" / "gsap.min.js", dosar / "gsap.min.js")
-    subprocess.run([npx, "hyperframes", "render", str(dosar), "--fps", "30", "--quality", "draft", "-o", str(iesire)],
-                   cwd=platforma.RADACINA, check=True, timeout=900)
+    subprocess.run(comanda_randare(dosar, iesire), cwd=platforma.RADACINA, env=mediu_randare(), check=True, timeout=900)
     r = subprocess.run([shutil.which("ffprobe") or "ffprobe", "-v", "error", "-select_streams", "v:0", "-count_frames",
                         "-show_entries", "stream=nb_read_frames", "-of", "json", str(iesire)],
                        capture_output=True, text=True, check=True)

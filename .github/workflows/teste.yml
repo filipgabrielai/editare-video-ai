@@ -14,14 +14,28 @@ jobs:
     env:
       EDITARE_MODEL: ggml-tiny.bin
       PYTHONUTF8: "1"
+    defaults:
+      run:
+        # ca la un om: repo-ul stă într-o cale cu spații și diacritice
+        working-directory: "cale cu spații/editare-video-ai"
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: "cale cu spații/editare-video-ai"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - uses: actions/setup-node@v4
+        if: runner.os == 'macOS'
         with:
           node-version: "22"
+      - name: Node.js în Program Files (Windows, ca după winget sau installerul oficial)
+        if: runner.os == 'Windows'
+        run: |
+          choco upgrade nodejs-lts -y --no-progress
+          "C:\Program Files\nodejs" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Unde e Node
+        run: node -e "console.log(process.execPath, process.version)"
       - name: ffmpeg și whisper.cpp (Mac)
         if: runner.os == 'macOS'
         run: brew install ffmpeg whisper-cpp
