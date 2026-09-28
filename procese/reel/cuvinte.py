@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+"""Cuvintele cu timpi pe dublele alese (whisper.cpp local, un cuvânt pe segment), pentru tăietură și captions.
+
+    python3 procese/reel/cuvinte.py proiecte/<slug> IMG_1544_03 IMG_1545_06 ...
+
+Iese transcripte/<dubla>.json = {dubla, decalaj, words}: timpii din words sunt relativi la bucata tăiată din clip, care începe
+la decalaj = max(0, start − 0,15); timpul în clip = decalaj + start. Sare peste ce e deja transcris.
+"""
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from unelte import platforma  # noqa: E402
+
+
+def cuvinte_din_whisper(j: dict) -> list[dict]:
+    out = []
+    for s in j.get("transcription", []):
+        t = s.get("text", "").strip()
+        if not t or (t.startswith("[") and t.endswith("]")):
+            continue
+        out.append({"text": t, "start": round(s["offsets"]["from"] / 1000, 3), "end": round(s["offsets"]["to"] / 1000, 3), "type": "word"})
+    return out
+
+
+def transcrie_dubla(dosar: Path, d: dict) -> Path:
+    tinta = dosar / "transcripte" / f"{d['dubla']}.json"
+    if tinta.exists():
+        return tinta
+    lucru = dosar / "lucru"
+    decalaj = max(0.0, d["start"] - 0.15)
+    seg = lucru / f"{d['dubla']}.wav"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(lucru / f"{d['clip']}.wav"), "-ss", f"{decalaj:.3f}",
+                    "-to", f"{d['end'] + 0.15:.3f}", str(seg)], check=True)
+    cli = platforma.gaseste("whisper-cli")
+    if not cli:
+        raise SystemExit("whisper-cli lipsește: rulează /instalare.")
+    baza = platforma.RADACINA
+    rel = lambda p: platforma.cale_pentru_unealta(p, baza)  # noqa: E731
+    r = subprocess.run([cli, "-m", rel(platforma.model_whisper()), "-l", "ro", "-ml", "1", "-sow", "-oj",
+                        "-of", rel(lucru / d["dubla"]), "-np", "-f", rel(seg)],
+                       cwd=baza, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if r.returncode != 0:
+        raise SystemExit(f"whisper-cli nu a pornit (cod {r.returncode}): " + " ".join((r.stderr or "").strip().splitlines()[-2:]))
+    with open(lucru / f"{d['dubla']}.json", encoding="utf-8") as f:
+        ws = cuvinte_din_whisper(json.load(f))
+    tinta.parent.mkdir(exist_ok=True)
+    with open(tinta, "w", encoding="utf-8") as f:
+        json.dump({"dubla": d["dubla"], "decalaj": round(decalaj, 3), "words": ws}, f, ensure_ascii=False, indent=1)
+    return tinta
+
+
+def main(argv: list[str] | None = None) -> int:
+    platforma.iesire_utf8()
+    argv = sys.argv[1:] if argv is None else argv
+    if len(argv) < 2:
+        raise SystemExit("Folosire: cuvinte.py proiecte/<slug> <dubla> [<dubla> ...]")
+    dosar = Path(argv[0])
+    with open(dosar / "duble.json", encoding="utf-8") as f:
+        toate = {d["dubla"]: d for d in json.load(f)}
+    for nume in argv[1:]:
+        if nume not in toate:
+            raise SystemExit(f"Dubla {nume} nu există în duble.json (sunt: {', '.join(list(toate)[:12])}...).")
+        tinta = transcrie_dubla(dosar, toate[nume])
+        with open(tinta, encoding="utf-8") as f:
+            ws = json.load(f)["words"]
+        print(f"{nume}: {len(ws)} cuvinte | {' '.join(w['text'] for w in ws)[:120]}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
