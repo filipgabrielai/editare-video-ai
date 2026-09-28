@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><title>Proba</title>
+<script src="gsap.min.js"></script>
+<style>
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#0b0d12}
+#proba{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0b0d12;font-family:Arial,Helvetica,sans-serif}
+.clip{position:absolute;inset:0;width:1080px;height:1920px}
+#fund{background:#0b0d12}
+#text{position:absolute;left:90px;right:90px;top:820px;color:#f2f5f8;font-size:72px;line-height:1.15;text-align:center;opacity:0}
+</style></head><body>
+<div id="proba" data-composition-id="proba" data-start="0" data-duration="2" data-width="1080" data-height="1920">
+  <div id="fund" class="clip" data-start="0" data-duration="2" data-track-index="0"></div>
+  <div id="text">Editare video în română · ăâîșț</div>
+</div>
+<script>
+  window.__timelines = window.__timelines || {};
+  const tl = gsap.timeline({ paused: true });
+  tl.to("#text", { opacity: 1, duration: 0.5 }, 0.2);
+  tl.set({}, {}, 2);
+  window.__timelines["proba"] = tl;
+</script>
+</body></html>
