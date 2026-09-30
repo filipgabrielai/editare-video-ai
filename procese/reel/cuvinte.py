@@ -4,7 +4,8 @@
     python3 procese/reel/cuvinte.py proiecte/<slug> IMG_1544_03 IMG_1545_06 ...
 
 Iese transcripte/<dubla>.json = {dubla, decalaj, words}: timpii din words sunt relativi la bucata tăiată din clip, care începe
-la decalaj = max(0, start − 0,15); timpul în clip = decalaj + start. Sare peste ce e deja transcris.
+la decalaj = 0,15 s înainte de sunetul primului cuvânt (nu de segmentul Whisper, care poate începe peste liniște și buze);
+timpul în clip = decalaj + start. Sare peste ce e deja transcris.
 """
 from __future__ import annotations
 
@@ -14,6 +15,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from procese.reel import taietura  # noqa: E402
 from unelte import platforma  # noqa: E402
 
 
@@ -27,12 +29,24 @@ def cuvinte_din_whisper(j: dict) -> list[dict]:
     return out
 
 
+def decalaj_pe_sunet(rms: list[float], prag_db: float, start: float, end: float) -> float:
+    """De unde pleacă bucata trimisă la Whisper: cu 0,15 s înainte de sunetul primului cuvânt, nu de începutul segmentului
+    Whisper. Cu liniște și buze în față, Whisper lipea toate cuvintele dublei de începutul fișierului."""
+    on = taietura.debut(rms, int(start / taietura.PAS), int(end / taietura.PAS), prag_db)
+    return max(0.0, round(on * taietura.PAS - 0.15, 3))
+
+
 def transcrie_dubla(dosar: Path, d: dict) -> Path:
     tinta = dosar / "transcripte" / f"{d['dubla']}.json"
     if tinta.exists():
         return tinta
     lucru = dosar / "lucru"
-    decalaj = max(0.0, d["start"] - 0.15)
+    raw = lucru / f"{d['clip']}.raw"
+    if raw.exists():
+        rms = taietura.rms_db(raw)
+        decalaj = decalaj_pe_sunet(rms, taietura.prag(rms), d["start"], d["end"])
+    else:
+        decalaj = max(0.0, d["start"] - 0.15)
     seg = lucru / f"{d['dubla']}.wav"
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(lucru / f"{d['clip']}.wav"), "-ss", f"{decalaj:.3f}",
                     "-to", f"{d['end'] + 0.15:.3f}", str(seg)], check=True)

@@ -4,6 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from procese.reel import cuvinte  # noqa: E402
+from procese.reel import taietura as T  # noqa: E402
 
 WHISPER = {"transcription": [
     {"text": " Mi", "offsets": {"from": 120, "to": 300}},
@@ -20,6 +21,17 @@ class TestCuvinte(unittest.TestCase):
         self.assertEqual([w["text"] for w in ws], ["Mi", "se", "pare,"])
         self.assertEqual((ws[0]["start"], ws[0]["end"]), (0.12, 0.3))
         self.assertTrue(all(w["type"] == "word" for w in ws))
+
+    def test_dubla_pleaca_de_la_sunet_nu_de_la_segmentul_whisper(self):
+        # „Și pe primul loc” (reelul „Top 3”): segmentul Whisper începea cu 0,4 s înainte de voce, peste buze și liniște, iar
+        # Whisper a lipit toate cuvintele dublei de începutul fișierului (captions cu 0,3–0,5 s prea devreme)
+        rms = [(-20.0 if 1.0 <= k * T.PAS < 2.0 else -80.0) for k in range(int(4 / T.PAS))]
+        for k in range(round(0.55 / T.PAS), round(0.63 / T.PAS)):
+            rms[k] = -42.0
+        self.assertAlmostEqual(cuvinte.decalaj_pe_sunet(rms, T.PRAG, 0.58, 1.98), 0.85, delta=0.01)
+        self.assertAlmostEqual(cuvinte.decalaj_pe_sunet(rms, T.PRAG, 1.0, 1.98), 0.85, delta=0.01)
+        la_inceput = [(-20.0 if k * T.PAS < 1.0 else -80.0) for k in range(int(4 / T.PAS))]
+        self.assertEqual(cuvinte.decalaj_pe_sunet(la_inceput, T.PRAG, 0.05, 0.9), 0.0)
 
 
 if __name__ == "__main__":

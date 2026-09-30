@@ -16,7 +16,8 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
 3. **Tăietura:** scrii `proiecte/<slug>/bucati.json` (`[{"dubla": "...", "de_la": null, "pana_la": null}]`; „cuvânt#2” = a
    doua apariție, „cuvânt@ultimul” = ultima), apoi `python3 procese/reel/taietura.py proiecte/<slug>`. Verifici în
    `transcript.json` că primul și ultimul cuvânt al fiecărei bucăți sunt întregi. Când scurtezi, scoți fraze sau blocuri întregi,
-   niciodată coada unei fraze ca să intri sub o durată.
+   niciodată coada unei fraze ca să intri sub o durată. Dacă omul spune că nu se aude finalul unui cuvânt de la capătul unei
+   bucăți, îi dai bucății `"coada": 0.1` (secunde în plus la capăt) și refaci tăietura.
 4. **Conținutul:** fiecare cifră, preț, nume de produs se verifică pe sursa primară (site-ul oficial). Ce a spus omul greșit nu
    se taie: se corectează blând pe card, cu sursa, și i se spune. Nimic tăiat în tăcere: la livrare îi spui tot ce ai scos în
    afară de reluări.
@@ -26,7 +27,9 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
 6. **Scenariul:** `proiecte/<slug>/scenariu.json`, formatul în `docs/SCENARIU.md`. Card doar pe ce adaugă ceva peste ce se
    vede și se aude: ideea, cifra, pașii. Maximum 4 rânduri, text scurt, cuvântul important cu `**...**`. Ancorele se copiază
    din `transcript.json`. Fiecare aplicație numită primește logoul ei: îl iei doar de pe site-ul oficial (iconița din pagină
-   sau pagina de brand), îl pui în `proiecte/<slug>/logo/` și îl verifici cu ochii înainte să-l folosești.
+   sau pagina de brand), îl pui în `proiecte/<slug>/logo/` și îl verifici cu ochii înainte să-l folosești. Whisper aude „AI”
+   ca „ei”, „ea” sau „ai”: citești captions-urile cap-coadă și adaugi corecturi pe context, cu cuvântul dinainte
+   („despre ei” → „despre AI”), niciodată „ei” singur, fiindcă e și cuvânt românesc.
 7. **Compoziția:** `python3 procese/reel/compozitie.py proiecte/<slug>`. Dacă dă erori, repari scenariul.
 8. **Planșele:** `python3 procese/reel/planse.py proiecte/<slug>` și citești fiecare foaie: nimic important în roșu, cardurile nu
    acoperă fața, textul nu iese din card, captions se citesc. Repari și reiei 7–8.

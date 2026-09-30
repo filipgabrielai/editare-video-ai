@@ -61,6 +61,29 @@ class TestCapete(unittest.TestCase):
         a0, _ = T.capete(self.rms(1.0, 2.0), 0.80, 1.98, 0.0, 1e9)
         self.assertTrue(0.9 <= a0 <= 0.97, a0)
 
+    def test_respiratia_inainte_de_cuvant_nu_e_vorbire(self):
+        # „Și pe primul loc” (reelul „Top 3”): 80 ms de buze la −42 dB, apoi 0,35 s de liniște în care se uita în lateral, iar
+        # Whisper a pus „Și” cu 0,4 s înainte de sunet; bucata pornea de la buze și pauza de la tăietură ajungea la ~0,5 s
+        rms = self.rms(1.0, 2.0)
+        for k in range(round(0.55 / T.PAS), round(0.63 / T.PAS)):
+            rms[k] = -42.0
+        a0, _ = T.capete(rms, 0.58, 1.98, 0.0, 1e9)
+        self.assertTrue(0.9 <= a0 <= 0.97, a0)
+
+    def test_primul_cuvant_scurt_urmat_de_pauza_ramane(self):
+        # „Și… pe primul loc”: un cuvânt scurt, spus la nivelul vorbirii, apoi o pauză, e vorbire și rămâne în bucată
+        rms = self.rms(1.0, 2.0)
+        for k in range(round(0.55 / T.PAS), round(0.65 / T.PAS)):
+            rms[k] = -24.0
+        a0, _ = T.capete(rms, 0.58, 1.98, 0.0, 1e9)
+        self.assertTrue(0.48 <= a0 <= 0.52, a0)
+
+    def test_coada_lungeste_capatul_pe_grila_fara_sa_treaca_de_cuvantul_urmator(self):
+        self.assertAlmostEqual(T.cu_coada(2.0, 0.1, 1e9), 2.1)
+        self.assertAlmostEqual(T.cu_coada(2.0, 0.1, 2.05) * T.FPS, round(T.cu_coada(2.0, 0.1, 2.05) * T.FPS))
+        self.assertLessEqual(T.cu_coada(2.0, 0.1, 2.05), 2.05)
+        self.assertEqual(T.cu_coada(2.0, 0.0, 1e9), 2.0)
+
     def test_in_liniste_pragul_ramane_minus_50(self):
         self.assertEqual(T.prag(self.rms(1.0, 2.0)), T.PRAG)
 

@@ -5,10 +5,11 @@
 
 bucati.json (scris când alegi dublele): [{"dubla": "IMG_1544_03", "de_la": null, "pana_la": "aplicație#2"}, ...]
 de_la / pana_la: primul / ultimul cuvânt păstrat; „text#n” = a n-a apariție, „text@ultimul” = ultima; null = de la primul /
-până la ultimul cuvânt al dublei. Capetele se pun pe sunet: înapoi până sub −50 dB, cu 0,05 s înainte și 0,02 s după (pauza
-la tăietură iese de 0,06–0,10 s, ritmul care sună natural), fără să intre în cuvântul vecin. Fiecare bucată are intrarea ei
-(cu -ss), trece prin fps=60 și e tăiată la numărul exact de cadre: clipurile de telefon au ~59,97 fps, iar tăiatul pe timpi
-pierdea sau adăuga un cadru. Clipurile în peisaj se decupează la 9:16, nu se deformează.
+până la ultimul cuvânt al dublei; "coada": 0.1 = secunde în plus la capăt, când omul spune că finalul unui cuvânt nu se aude.
+Capetele se pun pe sunet: înapoi până sub −50 dB, cu 0,05 s înainte și 0,02 s după (pauza la tăietură iese de 0,06–0,10 s,
+ritmul care sună natural), fără să intre în cuvântul vecin. Fiecare bucată are intrarea ei (cu -ss), trece prin fps=60 și e
+tăiată la numărul exact de cadre: clipurile de telefon au ~59,97 fps, iar tăiatul pe timpi pierdea sau adăuga un cadru.
+Clipurile în peisaj se decupează la 9:16, nu se deformează.
 
 Iese: taiat.mp4, voce.wav, taieturi.json, transcript.json (cuvintele pe timpul reelului).
 """
@@ -71,11 +72,34 @@ def sustinut(rms: list[float], k: int, prag_db: float, inapoi: bool = False) -> 
     return rms[k] > prag_db and sum(x > prag_db for x in fereastra) >= 3
 
 
+def sfarsit_sunet(rms: list[float], k: int, prag_db: float) -> int:
+    """Primul index de după sunetul care începe la k, după care urmează cel puțin 0,15 s de liniște."""
+    j = k
+    while j < len(rms) and any(x > prag_db for x in rms[j:j + 30]):
+        j += 1
+    return j
+
+
+def debut(rms: list[float], i_s: int, i_e: int, prag_db: float) -> int:
+    """Indexul unde începe vorbirea din jurul primului cuvânt (Whisper îl pune cu până la ~150 ms după și ~0,4 s înainte de
+    sunet). Un sunet scurt (sub 0,12 s) și slab (cu 15 dB sub vorbire), urmat de liniște, e respirație sau buze, nu vorbire."""
+    varf = max(rms[i_s:i_e + 1], default=0.0)
+    k = max(0, i_s - 70)
+    while k < min(len(rms), i_s + 120):
+        if sustinut(rms, k, prag_db):
+            sf = sfarsit_sunet(rms, k, prag_db)
+            if sf - k < 24 and max(rms[k:sf]) < varf - 15:
+                k = sf
+                continue
+            return k
+        k += 1
+    return i_s
+
+
 def capete(rms: list[float], s: float, e: float, lim_s: float, lim_e: float, prag_db: float = PRAG) -> tuple[float, float]:
     """Începutul și sfârșitul bucății, pe sunet (peste prag), cu pad-ul, fără să treacă de cuvintele vecine, pe grila de cadre."""
     i_s, i_e = int(s / PAS), int(e / PAS)
-    on = min([k for k in range(max(0, i_s - 70), min(len(rms), i_s + 60)) if sustinut(rms, k, prag_db)], default=i_s)   # Whisper greșește începutul cu până la ~150 ms
-    on = max(on, int(lim_s / PAS))
+    on = max(debut(rms, i_s, i_e, prag_db), int(lim_s / PAS))
     off, tacere = i_e, 0
     for k in range(max(0, i_e - 30), min(len(rms), i_e + 24, int(lim_e / PAS))):
         if sustinut(rms, k, prag_db, inapoi=True):
@@ -87,6 +111,14 @@ def capete(rms: list[float], s: float, e: float, lim_s: float, lim_e: float, pra
     a0 = round(max(0.0, on * PAS - PAD_IN) * FPS) / FPS
     a1 = round(min(off * PAS + PAD_OUT, lim_e) * FPS) / FPS
     return a0, a1
+
+
+def cu_coada(a1: float, coada: float, lim_e: float) -> float:
+    """Capătul lungit cu „coada” din bucati.json (când omul spune că nu se aude finalul unui cuvânt), pe grila de cadre, fără
+    să treacă de cuvântul următor din dublă."""
+    if not coada:
+        return a1
+    return math.floor(min(a1 + coada, lim_e) * FPS + 1e-6) / FPS
 
 
 def filtre(seg: list[tuple[str, float, float]], s0s: list[float]) -> str:
@@ -131,6 +163,7 @@ def main(argv: list[str] | None = None) -> int:
             rms_cache[d["clip"]] = (r, prag(r))
         rms, prag_clip = rms_cache[d["clip"]]
         a0, a1 = capete(rms, s, e, lim_s, lim_e, prag_clip)
+        a1 = cu_coada(a1, b.get("coada", 0.0), lim_e)
         seg.append((d["clip"], a0, a1))
         for w in ws[i0:i1 + 1]:
             cuvinte_reel.append({"text": w["text"], "start": round(w["start"] + off - a0 + acc, 3),
