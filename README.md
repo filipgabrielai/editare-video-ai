@@ -1,9 +1,15 @@
 # editare-video-ai
 
-Sistemul meu de editare video, în română, pe care îl rulezi în Claude Code: de la clipurile brute la un reel pentru Instagram
-sau un video de YouTube gata de postat. E construit pe ce am învățat editând peste 20 de videouri cu el.
+Kitul meu de editare de reeluri, în română, pe care îl rulezi în Claude Code: pui clipurile brute (duble, greșeli, tot), iar Claude
+alege dublele, taie la cadru, pune cardurile, captions și sunetele, și îți dă un reel 9:16 verificat, în culorile și cu logoul tău.
+E construit pe ce am învățat editând peste 20 de videouri.
 
-**Stare:** în construcție. Are instalarea și editarea de reel; YouTube vine în versiunile următoare.
+**Ce face acum:** reeluri (Instagram, TikTok, Shorts). Editarea de YouTube și stiluri noi vin în versiunile următoare.
+
+## Înainte și după
+
+Demo-ul: un clip brut de 2:20 cu 31 de duble → un reel de 26 de secunde. Clipul brut și reelul scos de kit sunt în
+[Release-ul demo](https://github.com/filipgabrielai/editare-video-ai/releases/tag/demo-reel-v1).
 
 ## Ce îți trebuie
 
@@ -11,22 +17,23 @@ sau un video de YouTube gata de postat. E construit pe ce am învățat editând
 - Un Mac sau un PC cu Windows 10/11, și cel puțin 10 GB liberi pe disc.
 - Restul (ffmpeg, whisper.cpp, Node.js, Python, modelul Whisper) le instalează Claude pentru tine.
 
-## Instalare
+## Trei pași
 
-1. Descarci repo-ul (butonul „Code” → „Download ZIP”, sau `git clone`) și îl dezarhivezi.
-2. Deschizi folderul în Claude Code.
-3. Scrii `/instalare` și aprobi comenzile pe care ți le propune. La final îți spune „Gata, poți edita.”
+1. **Instalare:** descarci repo-ul (butonul „Code” → „Download ZIP”, sau `git clone`), îl deschizi în Claude Code și scrii `/instalare`.
+   Aprobi comenzile pe care ți le propune; la final îți spune „Gata, poți edita.”
+2. **Personalizare:** `/personalizare`. Îți ia numele, culorile, logoul, fontul, CTA-ul și preferințele (captions, sunete, filtrul pe față),
+   apoi îți arată o probă de stil. Detalii în `docs/PERSONALIZARE.md`.
+3. **Editare:** pune clipurile într-un folder și scrie `/editeaza-reel "<calea către folder>"`. Primești în `proiecte/` reelul, gata de
+   postat după ce te uiți pe el. Vrei să încerci fără clipurile tale: `python3 instalare/descarca.py demo` și urmezi `exemple/demo-reel/README.md`.
 
-## Editează un reel
+## Din sistemul tău de Claude Code
 
-Pune clipurile brute într-un folder (duble, greșeli, tot) și scrie în Claude Code:
-`/editeaza-reel "<calea către folder>"`. Primești în `proiecte/` un reel 1080x1920 cu tăieturile, cardurile și captions,
-verificat, gata de postat după ce te uiți pe el.
+Dacă ai deja un sistem în Claude Code, scrie `/leaga-de-sistem`: kitul rămâne în folderul lui, iar din orice proiect poți cere
+„editează reelul din folderul X”. Se scoate oricând.
 
 ## Cât costă
 
-Repo-ul e gratuit. Transcrierea e locală, deci gratuită. Claude Code consumă din limitele abonamentului tău; un YouTube întreg
-consumă mult. Detaliile în `docs/COSTURI.md` (vine în versiunile următoare).
+Kitul e gratuit. Transcrierea e locală, deci gratuită. Claude Code consumă din limitele abonamentului tău. Detalii în `docs/COSTURI.md`.
 
 ## Credit
 

@@ -9,6 +9,8 @@ Scopul: un DRAFT în `proiecte/<slug>/`, verificat, pe care omul îl poate posta
 Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă spune că lipsește ceva, mergi pe `/instalare`.
 Îl ții la curent la pașii mari (dublele, tăietura, planșele, draftul), nu la fiecare comandă.
 
+0. **Brandul:** rulează `python3 unelte/brand.py`. Dacă nu există `brand/brand.json`, îi propui `/personalizare` înainte
+   (două minute); dacă vrea direct reelul, continui cu stilul Studio.
 1. **Dublele:** `python3 procese/reel/duble.py "<folder sau clip>" --nume "<numele reelului>"`. Citește TOATE dublele, nu doar ultima.
    De regulă se păstrează ultima dublă întreagă a fiecărei fraze, dar omul schimbă cuvinte între duble și uneori decide altfel;
    ce nu e clar, îl întrebi. Textele de tip „Mulțumim pentru vizionare!” pe o dublă scurtă sunt Whisper care aude liniștea.
@@ -29,7 +31,9 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
    din `transcript.json`. Fiecare aplicație numită primește logoul ei: îl iei doar de pe site-ul oficial (iconița din pagină
    sau pagina de brand), îl pui în `proiecte/<slug>/logo/` și îl verifici cu ochii înainte să-l folosești. Whisper aude „AI”
    ca „ei”, „ea” sau „ai”: citești captions-urile cap-coadă și adaugi corecturi pe context, cu cuvântul dinainte
-   („despre ei” → „despre AI”), niciodată „ei” singur, fiindcă e și cuvânt românesc.
+   („despre ei” → „despre AI”), niciodată „ei” singur, fiindcă e și cuvânt românesc. Cu `carduri: putine` în brand: hook,
+   cel mult două carduri și finalul. Cardul de final (CTA) primește `"brand": true` (logoul lui lângă kicker, numele lui ca
+   kicker dacă are); textul lui pornește de la `cta` din brand, adaptat la ce spune omul în clip.
 7. **Compoziția:** `python3 procese/reel/compozitie.py proiecte/<slug>`. Dacă dă erori, repari scenariul.
 8. **Planșele:** `python3 procese/reel/planse.py proiecte/<slug>` și citești fiecare foaie: nimic important în roșu, cardurile nu
    acoperă fața, textul nu iese din card, captions se citesc. Repari și reiei 7–8.
@@ -37,4 +41,5 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
    cauza și randezi din nou.
 10. **Livrarea:** scrii `proiecte/<slug>/DESIGN.md` (ce ai ales și de ce: dublele, ce ai scos, cadrul, cardurile, corecturile);
     `VERIFY.md` îl scrie randarea. Îi spui unde e fișierul, durata, ce ai verificat, ce ai scos și ce ai corectat. După OK-ul
-    lui, redenumești în „<Titlu> FINAL.mp4”. Nu publici și nu urci nimic.
+    lui, redenumești în „<Titlu> FINAL.mp4”. Nu publici și nu urci nimic. Filtrul pe față, captions și sunetele vin din
+    preferințele din brand; nu le schimbi din scenariu.
