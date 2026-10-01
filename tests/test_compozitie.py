@@ -68,6 +68,16 @@ class TestCompozitie(unittest.TestCase):
         self.assertEqual([round(x[0], 2) for x in s.lista], [0.1, 2.0])
         self.assertTrue(all(v <= 0.4 for _, n, v, _ in s.lista if n in ("boom", "knock")))
 
+    def test_cardurile_jongleaza_intre_trei_sunete(self):
+        # Filip pe DRAFT 3 al demo-ului: „să jongleze între 2-3 când apar animațiile”; boom și knock singure sunau la fel
+        s = C.Sunete()
+        for t in (0.1, 2.0, 4.0, 6.0, 8.0, 10.0):
+            s.adauga("card", t)
+        nume = [x[1] for x in s.lista]
+        self.assertEqual(len(set(nume[:3])), 3)
+        self.assertTrue(all(a != b for a, b in zip(nume, nume[1:])))
+        self.assertTrue(all((RAD / "sunete" / f"{n}.wav").exists() for n in nume))
+
     def test_logourile_in_locul_iconitei(self):
         sc = {"stil": "studio", "logo_inversat": ["openai"], "carduri": [{"id": "l1", "ancora": "start", "kicker": "LOCUL 1",
               "randuri": [{"text": "**Claude Code** și **Codex**", "logo": ["claude", "openai"]}]}]}

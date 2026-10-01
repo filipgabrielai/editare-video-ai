@@ -22,8 +22,8 @@ from unelte import hyperframes, platforma  # noqa: E402
 
 FPS = 60
 MAX_CAR = 22   # un grup de captions mai lung (la 58 px, centrat) ajunge peste butoanele din dreapta, de la x = 950
-ROT = {"card": ["boom", "knock"], "pop": ["pop", "thump", "click"]}
-VOL = {"boom": (0.35, 0.6), "knock": (0.35, 0.2), "pop": (0.55, 0.12), "thump": (0.5, 0.25), "click": (0.55, 0.14)}   # volum, durată
+ROT = {"card": ["boom", "knock", "tok"], "pop": ["pop", "thump", "click"]}   # trei la carduri: cu două, Filip le auzea la fel
+VOL = {"boom": (0.35, 0.6), "knock": (0.35, 0.2), "tok": (0.35, 0.16), "pop": (0.55, 0.12), "thump": (0.5, 0.25), "click": (0.55, 0.14)}   # volum, durată
 MIN_PAUZA = 1.0   # între două sunete; sub asta Filip le-a găsit „cam dese”
 INALTIME_RAND = {False: 84, True: 66}   # ca .card .row și .card.compact .row din stil
 

@@ -15,6 +15,7 @@ SUNETE = {   # nume: (expresia semnalului, durata în secunde, vârful în dB)
     "boom": ("sin(2*PI*(50+25*exp(-20*t))*t)*exp(-7*t)", 0.6, -16.0),
     "knock": ("sin(2*PI*(75+50*exp(-20*t))*t)*exp(-28*t)", 0.2, -17.0),
     "thump": ("sin(2*PI*(50+175*exp(-60*t))*t)*exp(-22*t)", 0.25, -21.0),
+    "tok": ("sin(2*PI*(260+90*exp(-45*t))*t)*exp(-32*t)", 0.16, -19.0),   # al treilea sunet de card, ca lemnul: mai sus decât knock, tot scurt
     "pop": ("sin(2*PI*1040*t)*(1-exp(-400*t))*exp(-20*t)", 0.12, -21.0),
     "click": ("sin(2*PI*750*t)*exp(-600*t)", 0.14, -21.0),
     "tick": ("sin(2*PI*3500*t)*exp(-120*t)", 0.05, -26.0),
