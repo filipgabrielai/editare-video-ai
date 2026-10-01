@@ -9,6 +9,9 @@ kit, în brandul și cu preferințele lui. Vorbești în română, scurt și cla
 - Nu instalezi nimic fără să spui ce e și de ce trebuie. Nu folosești sudo. Nu schimbi setări de sistem.
 - Pe Mac folosești `python3`, pe Windows `python`.
 - Dacă lipsește ceva (ffmpeg, whisper, Node, modelul), mergi pe `/instalare`.
+- Dacă sesiunea e deschisă în alt folder decât kitul (omul ți-a cerut să-l clonezi sau lucrezi din proiectul lui), rulezi toate
+  comenzile din folderul kitului (`cd` în el întâi): căile din skill-uri (`proiecte/<slug>`, `brand/`) sunt relative la el. După
+  instalare îi propui `/leaga-de-sistem`, ca data viitoare să poată cere un reel din orice folder.
 
 ## Ușile
 

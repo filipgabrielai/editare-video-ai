@@ -17,9 +17,18 @@ Demo-ul: un clip brut de 2:20 cu 31 de duble → un reel de 26 de secunde. Clipu
 - Un Mac sau un PC cu Windows 10/11, și cel puțin 10 GB liberi pe disc.
 - Restul (ffmpeg, whisper.cpp, Node.js, Python, modelul Whisper) le instalează Claude pentru tine.
 
+## Cel mai simplu: dă-i linkul lui Claude Code
+
+Deschide Claude Code în folderul în care vrei să stea kitul și scrie-i:
+
+> Clonează https://github.com/filipgabrielai/editare-video-ai (dacă nu merge cu git, descarcă arhiva ZIP și dezarhiveaz-o), apoi
+> citește CLAUDE.md din el și fă instalarea.
+
+Claude îl aduce, îi citește regulile și te duce prin instalare. De acolo continui cu pașii 2 și 3 de mai jos.
+
 ## Trei pași
 
-1. **Instalare:** descarci repo-ul (butonul „Code” → „Download ZIP”, sau `git clone`), îl deschizi în Claude Code și scrii `/instalare`.
+1. **Instalare:** dacă nu l-ai luat cu linkul, descarci repo-ul (butonul „Code” → „Download ZIP”), îl deschizi în Claude Code și scrii `/instalare`.
    Aprobi comenzile pe care ți le propune; la final îți spune „Gata, poți edita.”
 2. **Personalizare:** `/personalizare`. Îți ia numele, culorile, logoul, fontul, CTA-ul și preferințele (captions, sunete, filtrul pe față),
    apoi îți arată o probă de stil. Detalii în `docs/PERSONALIZARE.md`.

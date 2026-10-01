@@ -21,6 +21,15 @@ class TestSkilluri(unittest.TestCase):
             self.assertTrue((RAD / ".claude" / "skills" / u / "SKILL.md").is_file(), u)
             self.assertIn(f"`/{u}`", ghid)
 
+    def test_kitul_se_poate_lua_doar_cu_linkul(self):
+        # Filip: „să pot să îl iau ca link și să îi zic la Claude Code: clonează acest repository”
+        readme = (RAD / "README.md").read_text(encoding="utf-8")
+        self.assertIn("Clonează https://github.com/filipgabrielai/editare-video-ai", readme)
+        self.assertIn("citește CLAUDE.md din el", readme)
+        ghid = (RAD / "CLAUDE.md").read_text(encoding="utf-8")
+        self.assertIn("din folderul kitului", ghid)      # sesiunea poate fi deschisă în alt folder decât kitul
+        self.assertIn("`/leaga-de-sistem`", ghid)
+
 
 if __name__ == "__main__":
     unittest.main()
