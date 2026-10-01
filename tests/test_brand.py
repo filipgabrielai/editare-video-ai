@@ -75,6 +75,36 @@ class TestBrand(unittest.TestCase):
         self.assertEqual(brand.sunete(lista, b), [])
         self.assertEqual(brand.filtru_fata(brand.IMPLICIT), "")
 
+    def test_tipuri_gresite_spuse_in_romana_nu_traceback(self):
+        # review-ul final: „culori” scris ca listă sau ca text dădea AttributeError în loc de un mesaj
+        for date in ({"culori": "#ff5500"}, {"culori": ["#ff5500", "#112233"]}, {"preferinte": "captions"}):
+            _, erori = brand.combina(date)
+            self.assertEqual(len(erori), 1, date)
+        self.assertIn("„culori”", brand.combina({"culori": "#ff5500"})[1][0])
+        self.assertIn("„preferinte”", brand.combina({"preferinte": "captions"})[1][0])
+
+    def test_cheile_necunoscute_se_spun_cu_sugestie(self):
+        # „sunet” în loc de „sunete” era ignorat în tăcere și omul credea că a oprit sunetele
+        _, erori = brand.combina({"culoare": {"accent": "#ff5500"}, "culori": {"accnt": "#ff5500"}, "preferinte": {"sunet": "oprite"}})
+        text = "\n".join(erori)
+        for x in ("„culoare”", "„culori”?", "culori.accnt", "preferinte.sunet", "„sunete”?"):
+            self.assertIn(x, text)
+
+    def test_fontul_din_repo_dupa_nume(self):
+        # specul: fontul se alege (și) din fonturile libere din repo
+        b, erori = brand.combina({"font": "instrument serif"})
+        self.assertEqual(erori, [])
+        self.assertEqual(b["font"], "Instrument Serif")
+        css = brand.css(b)
+        self.assertIn("--font-display:'Instrument Serif'", css)
+        self.assertNotIn("@font-face", css)
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "brand.json").write_text(json.dumps({"font": "Instrument Serif"}), encoding="utf-8")
+            self.assertEqual(brand.incarca(Path(d))["font"], "Instrument Serif")   # nu cere fișier în brand/
+            brand.copiaza(b, Path(d) / "assets", Path(d))
+            self.assertEqual(list((Path(d) / "assets" / "brand").iterdir()), [])
+        self.assertIsNone(brand.combina({"font": "Geist"})[0]["font"])   # Geist e fontul stilului
+
 
 if __name__ == "__main__":
     unittest.main()

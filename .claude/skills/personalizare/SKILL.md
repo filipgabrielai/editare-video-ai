@@ -14,8 +14,9 @@ Scopul: `brand/brand.json` scris și o probă de stil pe care omul o vede și o 
    - culorile: două, în hex. Dacă are site, îl întrebi dacă le iei de acolo; deschizi pagina, propui culorile principale și le scrii doar
      după ce zice „da”;
    - logoul: calea fișierului lui (PNG sau SVG, ideal pătrat, pe fundal transparent). Îl copiezi în `brand/` cu numele lui;
-   - fontul: implicit Geist (cel din stil). Dacă vrea fontul lui, îi ceri fișierul (`.woff2`, `.ttf`, `.otf`) și îi spui că trebuie să aibă
-     diacriticele românești și licență care permite folosirea în video;
+   - fontul: implicit Geist (cel din stil); din kit poate alege și Instrument Serif (cu serife). Dacă vrea fontul lui, îi ceri fișierul
+     (`.woff2`, `.ttf`, `.otf`), îl copiezi în `brand/` și îi spui că trebuie să aibă diacriticele românești și licență care permite
+     folosirea în video;
    - CTA-ul de final, cum îl spune de obicei („urmărește-mă pentru mai multe”, „scrie-mi CURS în privat”).
 3. Preferințele: captions (da), carduri (normal; „puține” = doar hook, 1–2 carduri și finalul), sunete (normale / încete / oprite),
    filtrul pe față (niciunul / ușor / mediu: netezește pielea și luminează puțin, ca retușul din CapCut, pe toată imaginea), limba (română).

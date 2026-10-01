@@ -15,7 +15,9 @@
 
 - `nume`: apare ca titlu pe cardul de final.
 - `culori.accent`: cuvintele colorate, marginea cardurilor, cuvântul spus din captions. `culori.accent_2`: a doua culoare din iconițe.
-- `font`, `logo`: fișierele tale, puse în `brand/` (nu intră în git). Fontul trebuie să aibă diacriticele românești.
+- `font`: „Geist” (implicit) sau „Instrument Serif” (cu serife), amândouă din kit; ori fișierul fontului tău, pus în `brand/`
+  (`.woff2`, `.ttf`, `.otf`), care trebuie să aibă diacriticele românești.
+- `logo`: fișierul tău, pus în `brand/` (nu intră în git).
 - `cta`: textul cardului de final; `**cuvânt**` iese colorat.
 - `preferinte.captions`: `true` sau `false`.
 - `preferinte.carduri`: `normal` sau `putine` (doar hook, 1–2 carduri și finalul).

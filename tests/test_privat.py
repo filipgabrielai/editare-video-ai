@@ -3,6 +3,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -33,6 +34,32 @@ class TestPrivat(unittest.TestCase):
 
     def test_repo_e_curat(self):
         self.assertEqual(privat.verifica(privat.fisiere_git()), [])
+
+    def test_ce_nu_poate_citi_nu_e_curat(self):
+        # review-ul final: un fișier lipsă sau într-un format necunoscut ieșea „Nimic privat.”
+        with tempfile.TemporaryDirectory() as d:
+            necunoscut = Path(d) / "poza.heic"
+            necunoscut.write_bytes(b"\xff\xfe\x00\x01binar")
+            gasite = privat.verifica([Path(d) / "nu-exista.mp4", necunoscut])
+            self.assertEqual(len(gasite), 2)
+            self.assertTrue(all("nu l-am putut verifica" in g for g in gasite))
+
+    def test_arhiva_se_verifica_pe_dinauntru(self):
+        with tempfile.TemporaryDirectory() as d:
+            z = Path(d) / "demo.zip"
+            with zipfile.ZipFile(z, "w") as a:
+                a.writestr("clipuri/note.txt", "/Us" + "ers/ion/Desktop/clip.mov")
+                a.writestr("curat.txt", "nimic aici")
+            gasite = privat.verifica([z])
+            self.assertEqual(len(gasite), 1)
+            self.assertIn("clipuri/note.txt", gasite[0])
+            self.assertIn("cale personală", gasite[0])
+
+    def test_fonturile_se_sar(self):
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "Geist.woff2"
+            f.write_bytes(b"\xff\xfe\x00\x01")
+            self.assertEqual(privat.verifica([f]), [])
 
 
 if __name__ == "__main__":

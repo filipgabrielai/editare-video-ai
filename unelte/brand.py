@@ -9,6 +9,7 @@ Ce lipsește rămâne ca în stil (Studio) și în preferințele implicite. Logo
 from __future__ import annotations
 
 import copy
+import difflib
 import json
 import re
 import shutil
@@ -29,6 +30,7 @@ FILTRE_FATA = {   # retușul din CapCut, aproximat: netezire doar pe zonele plat
     "mediu": "smartblur=lr=4:ls=0.9:lt=6,eq=brightness=0.025:gamma=1.05:saturation=1.03",
 }
 VOLUM_SUNETE = {"oprite": 0.0, "incete": 0.5, "normale": 1.0}
+FONTURI_REPO = {"geist": None, "instrument serif": "Instrument Serif"}   # fonturile libere din fonturi/; Geist e cel al stilului
 IMPLICIT = {"nume": "", "culori": {"accent": None, "accent_2": None}, "font": None, "logo": None, "cta": "",
             "preferinte": {"captions": True, "carduri": "normal", "sunete": "normale", "filtru_fata": "niciunul", "limba": "ro"}}
 
@@ -52,12 +54,33 @@ def rgb(hexa: str) -> str:
     return ",".join(str(int(hexa[i:i + 2], 16)) for i in (1, 3, 5))
 
 
+def _necunoscute(date: dict, stiute, prefix: str = "") -> list[str]:
+    """O cheie scrisă greșit („sunet” în loc de „sunete”) ar lăsa implicitul fără să spună nimic: o spunem, cu sugestie."""
+    out = []
+    for k in date:
+        if k not in stiute:
+            aproape = difflib.get_close_matches(str(k), list(stiute), n=1)
+            out.append(f"câmp necunoscut „{prefix}{k}”" + (f" (voiai „{aproape[0]}”?)" if aproape else ""))
+    return out
+
+
+def font_din_repo(b: dict) -> bool:
+    return b["font"] in FONTURI_REPO.values() and b["font"] is not None
+
+
 def combina(date) -> tuple[dict, list[str]]:
     """Brandul complet (implicitele + ce a scris omul, normalizat) și greșelile, în română."""
     b = copy.deepcopy(IMPLICIT)
     if not isinstance(date, dict):
         return b, ["brand.json trebuie să fie un obiect JSON ({...})"]
-    erori = []
+    erori = _necunoscute(date, IMPLICIT)
+    date = dict(date)
+    for k, exemplu in (("culori", '{"accent": "#38bdf8", "accent_2": "#2563eb"}'), ("preferinte", '{"captions": true, "sunete": "normale"}')):
+        if k in date and not isinstance(date[k], dict):
+            erori.append(f"„{k}” e un obiect, de exemplu {exemplu}")
+            del date[k]
+        elif k in date:
+            erori += _necunoscute(date[k], IMPLICIT[k], f"{k}.")
     for k in ("nume", "cta"):
         if k in date:
             if isinstance(date[k], str):
@@ -75,8 +98,12 @@ def combina(date) -> tuple[dict, list[str]]:
     for k, ext in (("logo", EXT_LOGO), ("font", EXT_FONT)):
         v = date.get(k)
         if v:
-            if isinstance(v, str) and Path(v).suffix.lower() in ext:
+            if k == "font" and isinstance(v, str) and _simplu(v) in FONTURI_REPO:
+                b[k] = FONTURI_REPO[_simplu(v)]
+            elif isinstance(v, str) and Path(v).suffix.lower() in ext:
                 b[k] = v
+            elif k == "font":
+                erori.append(f"„font” e „Geist”, „Instrument Serif” sau numele unui fișier din brand/ ({', '.join(ext)})")
             else:
                 erori.append(f"„{k}” e numele unui fișier din brand/ ({', '.join(ext)})")
     pref = date.get("preferinte") or {}
@@ -113,7 +140,7 @@ def incarca(dosar: Path | None = None) -> dict:
         raise SystemExit(f"brand/brand.json nu e JSON valid (rândul {e.lineno}): {e.msg}. Rulează /personalizare ca să-l rescrii.") from None
     b, erori = combina(date)
     for k in ("logo", "font"):
-        if b[k] and not (dosar / b[k]).is_file():
+        if b[k] and not (k == "font" and font_din_repo(b)) and not (dosar / b[k]).is_file():
             erori.append(f"„{k}”: fișierul {b[k]} nu e în brand/")
     if erori:
         raise SystemExit("brand/brand.json are greșeli:\n" + "\n".join("- " + x for x in erori))
@@ -132,7 +159,10 @@ def stil(st: dict, b: dict) -> dict:
 def css(b: dict) -> str:
     """brand.css, pus după stilul ales: culorile și fontul omului. Gol dacă n-a setat nimic."""
     linii, var = [], []
-    if b["font"]:
+    if font_din_repo(b):   # Instrument Serif are o singură greutate: fără bold sintetic pe carduri și captions
+        var.append(f"--font-display:'{b['font']}','Geist','Helvetica Neue',Arial,sans-serif")
+        linii.append(".card .et,.card .et b,.cw,#titlu,.chip span{font-weight:400}")
+    elif b["font"]:
         linii.append(f"@font-face{{font-family:'Brand';src:url('brand/font{Path(b['font']).suffix.lower()}');font-display:block}}")
         var.append("--font-display:'Brand','Geist','Helvetica Neue',Arial,sans-serif")
     if b["culori"]["accent"]:
@@ -149,7 +179,7 @@ def copiaza(b: dict, assets: Path, dosar: Path | None = None) -> None:
     tinta = assets / "brand"
     tinta.mkdir(parents=True, exist_ok=True)
     for k in ("logo", "font"):
-        if b[k]:
+        if b[k] and not (k == "font" and font_din_repo(b)):
             shutil.copy(dosar / b[k], tinta / f"{k}{Path(b[k]).suffix.lower()}")
 
 

@@ -5,13 +5,16 @@ fișierelor media (iPhone-ul pune coordonatele GPS în fiecare MOV).
     python3 verificare/privat.py                 fișierele urmărite de git
     python3 verificare/privat.py <fișiere>...    doar fișierele date (de exemplu, ce urcă într-un Release)
 
-Codul de ieșire e 0 doar dacă nu găsește nimic.
+Arhivele .zip se verifică pe dinăuntru. Ce nu poate citi (fișier lipsă, format necunoscut) nu trece drept curat: îl spune și iese
+cu eroare. Codul de ieșire e 0 doar dacă nu găsește nimic.
 """
 from __future__ import annotations
 
 import re
 import subprocess
 import sys
+import tempfile
+import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -25,6 +28,7 @@ TIPARE = {
 }
 MEDIA = (".mp4", ".mov", ".m4v", ".wav", ".mp3", ".m4a", ".png", ".jpg", ".jpeg")
 CHEI_LOCATIE = ("location", "iso6709", "gps")
+FARA_TEXT = (".woff2", ".woff", ".ttf", ".otf")   # fonturile din repo: binare, fără date ale omului
 
 
 def in_text(text: str) -> list[str]:
@@ -41,17 +45,41 @@ def in_metadate(f: Path) -> list[str]:
     return [f"locație în metadate: {l.split('=')[0]}" for l in r.stdout.splitlines() if any(k in l.lower() for k in CHEI_LOCATIE)]
 
 
+def _arhiva(f: Path, nume: str) -> list[str]:
+    out = []
+    with tempfile.TemporaryDirectory() as d:
+        try:
+            with zipfile.ZipFile(f) as z:
+                z.extractall(d)
+        except (zipfile.BadZipFile, OSError):
+            return [f"{nume}: nu l-am putut verifica (arhiva nu se deschide)"]
+        for p in sorted(Path(d).rglob("*")):
+            if p.is_file():
+                out += _fisier(p, f"{nume} → {p.relative_to(d).as_posix()}")
+    return out
+
+
+def _fisier(f: Path, nume: str) -> list[str]:
+    ext = f.suffix.lower()
+    if ext in FARA_TEXT:
+        return []
+    if not f.is_file():
+        return [f"{nume}: nu l-am putut verifica (fișierul nu există)"]
+    if ext == ".zip":
+        return _arhiva(f, nume)
+    if ext in MEDIA:
+        return [f"{nume}: {g}" for g in in_metadate(f)]
+    try:
+        return [f"{nume}: {g}" for g in in_text(f.read_text(encoding="utf-8"))]
+    except (UnicodeDecodeError, OSError):
+        return [f"{nume}: nu l-am putut verifica (nu e text și nu e un format pe care îl știu)"]
+
+
 def verifica(fisiere: list[Path]) -> list[str]:
+    """Ce a găsit, plus ce nu a putut citi: un fișier necitit nu e un fișier curat."""
     out = []
     for f in fisiere:
-        if f.suffix.lower() in MEDIA:
-            gasite = in_metadate(f)
-        else:
-            try:
-                gasite = in_text(f.read_text(encoding="utf-8"))
-            except (UnicodeDecodeError, OSError):
-                continue
-        out += [f"{f}: {g}" for g in gasite]
+        out += _fisier(f, str(f))
     return out
 
 
