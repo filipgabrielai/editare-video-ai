@@ -51,6 +51,8 @@ jobs:
         run: npm install
       - name: Testele unitare
         run: python -m unittest discover -s tests -t . -p "test_*.py" -v
+      - name: Fără date private
+        run: python verificare/privat.py
       - name: Verificarea instalării
         run: python verificare/instalarea.py --fara-disc
       - name: Proba de 30 de secunde
