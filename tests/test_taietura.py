@@ -97,6 +97,11 @@ class TestFiltre(unittest.TestCase):
         self.assertNotIn("trim=-", f)   # bucata care începe la 0 nu primește start negativ
         self.assertTrue(f.endswith("concat=n=2:v=1:a=1[v][a]"))
 
+    def test_filtrul_pe_fata_dupa_decupaj(self):
+        f = T.filtre([("IMG_1", 1.5, 3.0)], [0.5], "smartblur=lr=2.5:ls=0.7:lt=4")
+        self.assertIn("crop=1080:1920,setsar=1,smartblur=lr=2.5:ls=0.7:lt=4[v0]", f)
+        self.assertNotIn("smartblur", T.filtre([("IMG_1", 1.5, 3.0)], [0.5]))
+
 
 if __name__ == "__main__":
     unittest.main()

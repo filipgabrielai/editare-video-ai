@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from procese.reel import taietura  # noqa: E402
-from unelte import platforma  # noqa: E402
+from unelte import brand, platforma  # noqa: E402
 
 
 def cuvinte_din_whisper(j: dict) -> list[dict]:
@@ -36,7 +36,7 @@ def decalaj_pe_sunet(rms: list[float], prag_db: float, start: float, end: float)
     return max(0.0, round(on * taietura.PAS - 0.15, 3))
 
 
-def transcrie_dubla(dosar: Path, d: dict) -> Path:
+def transcrie_dubla(dosar: Path, d: dict, limba: str = "ro") -> Path:
     tinta = dosar / "transcripte" / f"{d['dubla']}.json"
     if tinta.exists():
         return tinta
@@ -55,7 +55,7 @@ def transcrie_dubla(dosar: Path, d: dict) -> Path:
         raise SystemExit("whisper-cli lipsește: rulează /instalare.")
     baza = platforma.RADACINA
     rel = lambda p: platforma.cale_pentru_unealta(p, baza)  # noqa: E731
-    r = subprocess.run([cli, "-m", rel(platforma.model_whisper()), "-l", "ro", "-ml", "1", "-sow", "-oj",
+    r = subprocess.run([cli, "-m", rel(platforma.model_whisper()), "-l", limba, "-ml", "1", "-sow", "-oj",
                         "-of", rel(lucru / d["dubla"]), "-np", "-f", rel(seg)],
                        cwd=baza, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode != 0:
@@ -76,10 +76,11 @@ def main(argv: list[str] | None = None) -> int:
     dosar = Path(argv[0])
     with open(dosar / "duble.json", encoding="utf-8") as f:
         toate = {d["dubla"]: d for d in json.load(f)}
+    lb = brand.limba(brand.incarca())
     for nume in argv[1:]:
         if nume not in toate:
             raise SystemExit(f"Dubla {nume} nu există în duble.json (sunt: {', '.join(list(toate)[:12])}...).")
-        tinta = transcrie_dubla(dosar, toate[nume])
+        tinta = transcrie_dubla(dosar, toate[nume], lb)
         with open(tinta, encoding="utf-8") as f:
             ws = json.load(f)["words"]
         print(f"{nume}: {len(ws)} cuvinte | {' '.join(w['text'] for w in ws)[:120]}")

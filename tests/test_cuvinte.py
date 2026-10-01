@@ -1,6 +1,10 @@
+import json
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from procese.reel import cuvinte  # noqa: E402
@@ -32,6 +36,21 @@ class TestCuvinte(unittest.TestCase):
         self.assertAlmostEqual(cuvinte.decalaj_pe_sunet(rms, T.PRAG, 1.0, 1.98), 0.85, delta=0.01)
         la_inceput = [(-20.0 if k * T.PAS < 1.0 else -80.0) for k in range(int(4 / T.PAS))]
         self.assertEqual(cuvinte.decalaj_pe_sunet(la_inceput, T.PRAG, 0.05, 0.9), 0.0)
+
+    def test_limba_ajunge_la_whisper(self):
+        apeluri = []
+
+        def fals(cmd, **kw):
+            if "-oj" in cmd:
+                apeluri.append(cmd)
+                Path(cmd[cmd.index("-of") + 1] + ".json").write_text(json.dumps({"transcription": []}), encoding="utf-8")
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(cuvinte.subprocess, "run", side_effect=fals), \
+                mock.patch.object(cuvinte.platforma, "gaseste", return_value="whisper-cli"), \
+                mock.patch.object(cuvinte.platforma, "cale_pentru_unealta", side_effect=lambda p, b: str(p)):
+            (Path(d) / "lucru").mkdir()
+            cuvinte.transcrie_dubla(Path(d), {"dubla": "c_01", "clip": "c", "start": 1.0, "end": 2.0}, "en")
+        self.assertEqual(apeluri[0][apeluri[0].index("-l") + 1], "en")
 
 
 if __name__ == "__main__":

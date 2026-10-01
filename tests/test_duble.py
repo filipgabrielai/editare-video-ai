@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 RAD = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAD))
@@ -39,6 +40,19 @@ class TestDuble(unittest.TestCase):
             gasite = duble.detecteaza(wav)
         self.assertEqual(len(gasite), 2)
         self.assertLess(gasite[0][1], gasite[1][0])
+
+    def test_limba_ajunge_la_whisper(self):
+        apeluri = []
+
+        def fals(cmd, **kw):
+            apeluri.append(cmd)
+            return subprocess.CompletedProcess(cmd, 0, "Hello there", "")
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(duble.subprocess, "run", side_effect=fals), \
+                mock.patch.object(duble.platforma, "gaseste", return_value="whisper-cli"), \
+                mock.patch.object(duble.platforma, "cale_pentru_unealta", side_effect=lambda p, b: str(p)):
+            duble.transcrie(Path(d) / "a.wav", 0.0, 1.0, Path(d), "en")
+        w = apeluri[-1]
+        self.assertEqual(w[w.index("-l") + 1], "en")
 
 
 if __name__ == "__main__":

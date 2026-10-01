@@ -9,7 +9,8 @@ până la ultimul cuvânt al dublei; "coada": 0.1 = secunde în plus la capăt, 
 Capetele se pun pe sunet: înapoi până sub −50 dB, cu 0,05 s înainte și 0,02 s după (pauza la tăietură iese de 0,06–0,10 s,
 ritmul care sună natural), fără să intre în cuvântul vecin. Fiecare bucată are intrarea ei (cu -ss), trece prin fps=60 și e
 tăiată la numărul exact de cadre: clipurile de telefon au ~59,97 fps, iar tăiatul pe timpi pierdea sau adăuga un cadru.
-Clipurile în peisaj se decupează la 9:16, nu se deformează.
+Clipurile în peisaj se decupează la 9:16, nu se deformează. Filtrul pe față din preferințe (brand/brand.json) se aplică aici, pe
+toată imaginea, inclusiv pe înregistrările de ecran.
 
 Iese: taiat.mp4, voce.wav, taieturi.json, transcript.json (cuvintele pe timpul reelului).
 """
@@ -23,7 +24,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from unelte import platforma, proiect  # noqa: E402
+from unelte import brand, platforma, proiect  # noqa: E402
 
 FPS = 60
 PRAG = -50.0
@@ -121,14 +122,16 @@ def cu_coada(a1: float, coada: float, lim_e: float) -> float:
     return math.floor(min(a1 + coada, lim_e) * FPS + 1e-6) / FPS
 
 
-def filtre(seg: list[tuple[str, float, float]], s0s: list[float]) -> str:
+def filtre(seg: list[tuple[str, float, float]], s0s: list[float], extra: str = "") -> str:
+    """Lanțul ffmpeg al tăieturii; `extra` (filtrul pe față din preferințe) se pune după decupajul la 9:16."""
     J = 1 / (2 * FPS)
     parti = []
     for k, (_, a0, a1) in enumerate(seg):
         r0, r1 = a0 - s0s[k], a1 - s0s[k]
         n = round((a1 - a0) * FPS)
         parti.append(f"[{k}:v:0]trim={max(0.0, r0 - J):.5f}:{r1 + 4 * J:.5f},setpts=PTS-STARTPTS,fps={FPS},trim=end_frame={n},"
-                     f"setpts=PTS-STARTPTS,scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,crop=1080:1920,setsar=1[v{k}];"
+                     f"setpts=PTS-STARTPTS,scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,crop=1080:1920,setsar=1"
+                     f"{',' + extra if extra else ''}[v{k}];"
                      f"[{k}:a:0]atrim={r0:.5f}:{r1:.5f},asetpts=PTS-STARTPTS,aresample=48000[a{k}]")
     parti.append("".join(f"[v{k}][a{k}]" for k in range(len(seg))) + f"concat=n={len(seg)}:v=1:a=1[v][a]")
     return ";".join(parti)
@@ -145,6 +148,10 @@ def main(argv: list[str] | None = None) -> int:
     with open(dosar / "duble.json", encoding="utf-8") as f:
         duble = {d["dubla"]: d for d in json.load(f)}
     surse = proiect.clipuri(dosar)
+    b = brand.incarca()
+    extra = brand.filtru_fata(b)
+    if extra:
+        print(f"filtru pe față: {b['preferinte']['filtru_fata']}")
     seg, cuvinte_reel, acc, rms_cache = [], [], 0.0, {}
     for b in bucati:
         d = duble[b["dubla"]]
@@ -176,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
         s0 = max(0.0, a0 - 1.0)
         s0s.append(s0)
         cmd += ["-ss", f"{s0:.3f}", "-t", f"{a1 - s0 + 1.0:.3f}", "-i", str(surse[c])]
-    cmd += ["-filter_complex", filtre(seg, s0s), "-map", "[v]", "-map", "[a]", "-r", str(FPS), "-c:v", "libx264", "-preset", "fast",
+    cmd += ["-filter_complex", filtre(seg, s0s, extra), "-map", "[v]", "-map", "[a]", "-r", str(FPS), "-c:v", "libx264", "-preset", "fast",
             "-crf", "14", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "256k", "-ar", "48000", str(dosar / "taiat.mp4")]
     subprocess.run(cmd, check=True)
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(dosar / "taiat.mp4"), "-vn", "-ac", "1", "-ar", "48000",

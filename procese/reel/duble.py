@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from unelte import platforma, proiect  # noqa: E402
+from unelte import brand, platforma, proiect  # noqa: E402
 
 PRAG, MIN_TACERE, MIN_DUBLA = -38, 0.45, 0.25
 
@@ -55,14 +55,14 @@ def extrage_audio(clip: Path, lucru: Path, nume: str) -> tuple[Path, Path]:
     return wav, raw
 
 
-def transcrie(wav: Path, a: float, b: float, lucru: Path) -> str:
+def transcrie(wav: Path, a: float, b: float, lucru: Path, limba: str = "ro") -> str:
     seg = lucru / "dubla.wav"
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(wav), "-ss", f"{a:.3f}", "-to", f"{b:.3f}", str(seg)], check=True)
     cli = platforma.gaseste("whisper-cli")
     if not cli:
         raise SystemExit("whisper-cli lipsește: rulează /instalare.")
     baza = platforma.RADACINA
-    r = subprocess.run([cli, "-m", platforma.cale_pentru_unealta(platforma.model_whisper(), baza), "-l", "ro", "-np", "-nt",
+    r = subprocess.run([cli, "-m", platforma.cale_pentru_unealta(platforma.model_whisper(), baza), "-l", limba, "-np", "-nt",
                         "-f", platforma.cale_pentru_unealta(seg, baza)],
                        cwd=baza, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode != 0:
@@ -83,11 +83,12 @@ def main(argv: list[str] | None = None) -> int:
     lucru = dosar / "lucru"
     rezultat = []
     harta = proiect.clipuri(dosar)
+    lb = brand.limba(brand.incarca())
     for nume, clip in harta.items():
         wav, _ = extrage_audio(clip, lucru, nume)
         d = durata(wav)
         for n, (x, y) in enumerate(detecteaza(wav), 1):
-            text = transcrie(wav, max(0.0, x - 0.15), min(d, y + 0.15), lucru)
+            text = transcrie(wav, max(0.0, x - 0.15), min(d, y + 0.15), lucru, lb)
             rezultat.append({"dubla": f"{nume}_{n:02d}", "clip": nume, "nr": n, "start": x, "end": y, "text": text})
             print(f"{nume}_{n:02d}  {x:7.2f}-{y:7.2f}  ({y - x:5.2f} s)  {text}", flush=True)
     with open(dosar / "duble.json", "w", encoding="utf-8") as f:
