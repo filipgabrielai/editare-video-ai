@@ -10,6 +10,7 @@ RAD = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAD))
 from procese.reel import compozitie as C  # noqa: E402
 from procese.reel import scenariu as S  # noqa: E402
+from unelte import brand  # noqa: E402
 
 DATE = RAD / "tests" / "date" / "reel"
 
@@ -77,6 +78,33 @@ class TestCompozitie(unittest.TestCase):
         self.assertEqual(len(set(nume[:3])), 3)
         self.assertTrue(all(a != b for a, b in zip(nume, nume[1:])))
         self.assertTrue(all((RAD / "sunete" / f"{n}.wav").exists() for n in nume))
+
+    def test_cardul_cu_brand_primeste_logoul(self):
+        sc = {"stil": "studio", "carduri": [
+            {"id": "hook", "ancora": "start", "kicker": "HOOK", "randuri": [{"text": "a", "icoana": "zap"}]},
+            {"id": "final", "ancora": "start", "kicker": "FINAL", "brand": True, "randuri": [{"text": "b", "icoana": "user"}]}]}
+        html = "".join(C.planifica(sc, self.ws, [], 6.0, S.stil("studio"), None, '<img class="kl" src="assets/brand/logo.png" alt="">')["html"])
+        self.assertEqual(html.count('class="kl"'), 1)
+        self.assertIn('<div class="k"><img class="kl" src="assets/brand/logo.png" alt="">FINAL</div>', html)
+
+    def test_preferintele_opresc_sunetele_si_captions(self):
+        plan = {"sfx": [(0.05, "boom", 0.6, 0.6)]}
+        cap = (["<div class=\"cap\">x</div>"], ["tl.to()"])
+        b, _ = brand.combina({"preferinte": {"sunete": "oprite", "captions": False}})
+        self.assertEqual(C.aplica_preferinte(plan, cap, b), ([], []))
+        self.assertEqual(plan["sfx"], [])
+        plan = {"sfx": [(0.05, "boom", 0.6, 0.6)]}
+        self.assertEqual(C.aplica_preferinte(plan, cap, brand.IMPLICIT), cap)
+        self.assertEqual(plan["sfx"], [(0.05, "boom", 0.6, 0.6)])
+
+    def test_brand_css_in_pagina_si_in_assets(self):
+        plan = C.planifica(self.sc, self.ws, [], 6.0, S.stil("studio"))
+        p = C.pagina(self.sc, plan, [], [], 6.0)
+        self.assertLess(p.index('href="assets/stil.css"'), p.index('href="assets/brand.css"'))
+        with tempfile.TemporaryDirectory() as d:
+            b, _ = brand.combina({"culori": {"accent": "#ff5500"}})
+            C.pregateste_assets(Path(d), "studio", b)
+            self.assertIn("--accent:#ff5500", (Path(d) / "assets" / "brand.css").read_text(encoding="utf-8"))
 
     def test_logourile_in_locul_iconitei(self):
         sc = {"stil": "studio", "logo_inversat": ["openai"], "carduri": [{"id": "l1", "ancora": "start", "kicker": "LOCUL 1",

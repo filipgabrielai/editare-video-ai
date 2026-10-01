@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from procese.reel import scenariu as S  # noqa: E402
-from unelte import hyperframes, platforma  # noqa: E402
+from unelte import brand, hyperframes, platforma  # noqa: E402
 
 FPS = 60
 MAX_CAR = 22   # un grup de captions mai lung (la 58 px, centrat) ajunge peste butoanele din dreapta, de la x = 950
@@ -95,7 +95,8 @@ def logouri_lipsa(sc: dict, logouri: dict[str, str]) -> list[str]:
     return erori
 
 
-def planifica(sc: dict, ws: list[dict], cuts: list[float], durata: float, st: dict, logouri: dict[str, str] | None = None) -> dict:
+def planifica(sc: dict, ws: list[dict], cuts: list[float], durata: float, st: dict, logouri: dict[str, str] | None = None,
+              logo_brand: str = "") -> dict:
     js: list[str] = []
     html: list[str] = []
     beats: list[tuple[float, str]] = []
@@ -141,7 +142,8 @@ def planifica(sc: dict, ws: list[dict], cuts: list[float], durata: float, st: di
         if c.get("cifra"):
             corp.append(f'<div class="row"><span class="cifra" id="{cid}-cifra">{S.esc(c["cifra"]["valoare"])}</span></div>')
         cls = "card compact" if c.get("compact") else "card"
-        html.append(f'<div class="{cls}" id="{cid}"><div class="k">{S.esc(c["kicker"])}</div>{"".join(corp)}</div>')
+        marca = logo_brand if c.get("brand") else ""   # logoul omului, pe cardul de final
+        html.append(f'<div class="{cls}" id="{cid}"><div class="k">{marca}{S.esc(c["kicker"])}</div>{"".join(corp)}</div>')
         js.append(f'tl.fromTo("#{cid}", {{xPercent:-50, autoAlpha:0, y:-26, scale:0.94, filter:"blur(10px)"}}, '
                   f'{{xPercent:-50, autoAlpha:1, y:0, scale:1, filter:"blur(0px)", duration:0.5, ease:"back.out(1.3)"}}, {t0:.3f});')
         sun.adauga("card", t0, 0.6 if k == 0 else None)
@@ -204,6 +206,12 @@ def captions(gr: list[list[dict]], durata: float, accent: str) -> tuple[list[str
     return html, js
 
 
+def aplica_preferinte(plan: dict, cap: tuple[list[str], list[str]], b: dict) -> tuple[list[str], list[str]]:
+    """Preferințele omului peste plan: volumul sunetelor (sau fără), captions sau nu."""
+    plan["sfx"] = brand.sunete(plan["sfx"], b)
+    return cap if b["preferinte"]["captions"] else ([], [])
+
+
 def mesaj_lint(ok: bool, iesire: str) -> str:
     """Când trece, ajunge ultima linie; când pică, tot, ca să se vadă ce regulă a picat și unde."""
     iesire = iesire.strip()
@@ -223,6 +231,7 @@ def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata:
 <script src="assets/gsap.min.js"></script>
 <link rel="stylesheet" href="assets/fonturi/fonturi.css">
 <link rel="stylesheet" href="assets/stil.css">
+<link rel="stylesheet" href="assets/brand.css">
 </head><body>
 <div id="reel" data-composition-id="reel" data-start="0" data-duration="{durata:.3f}" data-width="1080" data-height="1920"
   style="--shift:{c['shift']}px;--carduri-y:{c['carduri_y']}px;--captions-y:{c['captions_y']}px;--compact-y:{compact_y}px">
@@ -252,7 +261,8 @@ def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata:
 """
 
 
-def pregateste_assets(dosar: Path, stil: str) -> None:
+def pregateste_assets(dosar: Path, stil: str, b: dict | None = None) -> None:
+    b = b or brand.IMPLICIT
     rad = platforma.RADACINA
     a = dosar / "assets"
     (a / "fonturi").mkdir(parents=True, exist_ok=True)
@@ -269,6 +279,8 @@ def pregateste_assets(dosar: Path, stil: str) -> None:
         for f in (dosar / "logo").iterdir():
             if f.is_file():
                 shutil.copy(f, a / "logo" / f.name)
+    (a / "brand.css").write_text(brand.css(b), encoding="utf-8")
+    brand.copiaza(b, a)
 
 
 def durata_video(f: Path) -> float:
@@ -297,10 +309,11 @@ def main(argv: list[str] | None = None) -> int:
     with open(dosar / "taieturi.json", encoding="utf-8") as f:
         cuts = json.load(f)["taieturi"]
     durata = durata_video(dosar / "taiat.mp4")
-    st = S.stil(sc["stil"])
-    plan = planifica(sc, ws, cuts, durata, st, logouri)
-    cap_html, cap_js = captions(grupuri(ws, cuts), durata, st["accent"])
-    pregateste_assets(dosar, sc["stil"])
+    b = brand.incarca()
+    st = brand.stil(S.stil(sc["stil"]), b)
+    plan = planifica(sc, ws, cuts, durata, st, logouri, brand.logo_html(b))
+    cap_html, cap_js = aplica_preferinte(plan, captions(grupuri(ws, cuts), durata, st["accent"]), b)
+    pregateste_assets(dosar, sc["stil"], b)
     (dosar / "index.html").write_text(pagina(sc, plan, cap_html, cap_js, durata), encoding="utf-8")
     with open(dosar / "intervale.json", "w", encoding="utf-8") as f:
         json.dump(plan["intervale"], f, indent=1)

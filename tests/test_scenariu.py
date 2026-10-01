@@ -54,6 +54,14 @@ class TestScenariu(unittest.TestCase):
         texte = [w["text"] for w in S.corecteaza(ws, {"un lte ai": "unelte AI", "cloudco": "Claude Code"})]
         self.assertEqual(texte, ["Top", "3", "unelte AI", "", "pentru", "Claude Code."])
 
+    def test_brand_e_true_sau_false(self):
+        sc = copy.deepcopy(SC)
+        sc["carduri"][0]["brand"] = "da"
+        erori, _ = S.valideaza(sc)
+        self.assertTrue(any("brand" in e for e in erori))
+        sc["carduri"][0]["brand"] = True
+        self.assertEqual(S.valideaza(sc)[0], [])
+
     def test_scenariul_bun_trece(self):
         self.assertEqual(S.valideaza(SC)[0], [])
 

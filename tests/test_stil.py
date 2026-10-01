@@ -24,6 +24,7 @@ class TestStil(unittest.TestCase):
         css = (RAD / "stiluri" / "studio" / "reel.css").read_text(encoding="utf-8")
         self.assertIn(".lg{", css)
         self.assertIn(".lg.inv{filter:invert(1)}", css)
+        self.assertIn(".card .k .kl{", css)
 
     def test_fonturi_locale_cu_licenta(self):
         self.assertEqual(len(list((RAD / "fonturi").glob("*.woff2"))), 8)

@@ -30,4 +30,5 @@ Claude scrie `proiecte/<slug>/scenariu.json` după ce citește transcriptul și 
   nu intră în repo. Logourile negre pe fundal transparent se trec în `"logo_inversat": ["openai"]` și apar albe.
 - `chips`: etichete scurte; `chips_mod` „aprinde” (stau gri, se aprind pe ancoră) sau „apar” (apar pe ancoră).
 - `cifra`: `{"valoare": "80%", "ancora": "..."}`, o cifră mare.
+- `brand` (opțional, `true`): pe cardul de final; pune logoul tău (din `brand/brand.json`) lângă kicker.
 - `compact`: card mic la 262 px, pentru când pe ecran e o înregistrare de ecran (se vede mai mult din ea).

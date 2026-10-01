@@ -21,6 +21,7 @@ html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--f
   box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 60px rgba(var(--accent-rgb),.22),inset 0 1px 0 rgba(255,255,255,.1)}
 .card.compact{top:var(--compact-y);padding:14px 28px 16px;min-width:0}
 .card .k{font-family:var(--font-mono);font-size:24px;letter-spacing:.2em;color:var(--accent);margin-bottom:8px;font-weight:600}
+.card .k .kl{height:30px;width:auto;max-width:140px;object-fit:contain;margin-right:12px;vertical-align:-7px;border-radius:6px}
 .card .row{display:flex;align-items:center;gap:18px;min-height:84px}
 .card.compact .row{min-height:66px;gap:14px}
 .card .row.ascuns{height:0;min-height:0;overflow:hidden;opacity:0}

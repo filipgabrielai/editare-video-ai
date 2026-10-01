@@ -133,6 +133,8 @@ def valideaza(sc: dict) -> tuple[list[str], list[str]]:
                 erori.append(f"icoana „{r['icoana']}” nu există (sunt: {', '.join(sorted(ICOANE))})")
             if len(_text_simplu(r.get("text", ""))) > MAX_TEXT:
                 avert.append(f"cardul „{cid}”: rândul „{r['text']}” e lung și poate ieși din card; verifică pe planșă")
+        if "brand" in c and not isinstance(c["brand"], bool):
+            erori.append(f"cardul „{cid}”: brand e true sau false")
         if c.get("chips_mod", "aprinde") not in ("aprinde", "apar"):
             erori.append(f"cardul „{cid}”: chips_mod e „aprinde” sau „apar”")
         for ch in c.get("chips", []):
