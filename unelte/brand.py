@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+"""Brandul și preferințele omului, scrise de /personalizare în brand/brand.json și aplicate peste stilul ales.
+
+    python3 unelte/brand.py        verifică brand/brand.json și spune ce e setat (pe Windows: python)
+
+Ce lipsește rămâne ca în stil (Studio) și în preferințele implicite. Logoul și fontul sunt fișierele omului, ținute în brand/
+(ignorat de git); în proiect se copiază ca logo.<ext> și font.<ext>, ca numele cu spații și diacritice să nu ajungă în HTML.
+"""
+from __future__ import annotations
+
+import copy
+import json
+import re
+import shutil
+import sys
+import unicodedata
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from unelte import platforma  # noqa: E402
+
+BRAND = platforma.RADACINA / "brand"
+EXT_LOGO = (".png", ".svg", ".jpg", ".jpeg", ".webp")
+EXT_FONT = (".woff2", ".woff", ".ttf", ".otf")
+ALEGERI = {"carduri": ("putine", "normal"), "sunete": ("oprite", "incete", "normale"), "filtru_fata": ("niciunul", "usor", "mediu")}
+FILTRE_FATA = {   # retușul din CapCut, aproximat: netezire doar pe zonele plate (pielea), plus puțină lumină; nu recunoaște fața
+    "niciunul": "",
+    "usor": "smartblur=lr=2.5:ls=0.7:lt=4,eq=brightness=0.015:gamma=1.03",
+    "mediu": "smartblur=lr=4:ls=0.9:lt=6,eq=brightness=0.025:gamma=1.05:saturation=1.03",
+}
+VOLUM_SUNETE = {"oprite": 0.0, "incete": 0.5, "normale": 1.0}
+IMPLICIT = {"nume": "", "culori": {"accent": None, "accent_2": None}, "font": None, "logo": None, "cta": "",
+            "preferinte": {"captions": True, "carduri": "normal", "sunete": "normale", "filtru_fata": "niciunul", "limba": "ro"}}
+
+
+def _simplu(s: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFD", s.lower()) if unicodedata.category(c) != "Mn").strip()
+
+
+def culoare(v) -> str | None:
+    """'#3BF' sau '#38bdf8' (cu sau fără #) → '#38bdf8'; altceva → None."""
+    if not isinstance(v, str):
+        return None
+    m = re.fullmatch(r"#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})", v.strip())
+    if not m:
+        return None
+    h = m.group(1).lower()
+    return "#" + ("".join(c * 2 for c in h) if len(h) == 3 else h)
+
+
+def rgb(hexa: str) -> str:
+    return ",".join(str(int(hexa[i:i + 2], 16)) for i in (1, 3, 5))
+
+
+def combina(date) -> tuple[dict, list[str]]:
+    """Brandul complet (implicitele + ce a scris omul, normalizat) și greșelile, în română."""
+    b = copy.deepcopy(IMPLICIT)
+    if not isinstance(date, dict):
+        return b, ["brand.json trebuie să fie un obiect JSON ({...})"]
+    erori = []
+    for k in ("nume", "cta"):
+        if k in date:
+            if isinstance(date[k], str):
+                b[k] = date[k].strip()
+            else:
+                erori.append(f"„{k}” trebuie să fie text")
+    for k in ("accent", "accent_2"):
+        v = (date.get("culori") or {}).get(k)
+        if v is not None:
+            c = culoare(v)
+            if c:
+                b["culori"][k] = c
+            else:
+                erori.append(f"culori.{k} = {v!r}: scrie culoarea în hex, de exemplu „#38bdf8”")
+    for k, ext in (("logo", EXT_LOGO), ("font", EXT_FONT)):
+        v = date.get(k)
+        if v:
+            if isinstance(v, str) and Path(v).suffix.lower() in ext:
+                b[k] = v
+            else:
+                erori.append(f"„{k}” e numele unui fișier din brand/ ({', '.join(ext)})")
+    pref = date.get("preferinte") or {}
+    if "captions" in pref:
+        if isinstance(pref["captions"], bool):
+            b["preferinte"]["captions"] = pref["captions"]
+        else:
+            erori.append("preferinte.captions e true sau false")
+    for k, ok in ALEGERI.items():
+        if k in pref:
+            v = _simplu(str(pref[k]))
+            if v in ok:
+                b["preferinte"][k] = v
+            else:
+                erori.append(f"preferinte.{k} = {pref[k]!r}: alege una din {', '.join(ok)}")
+    if "limba" in pref:
+        v = str(pref["limba"]).strip().lower()
+        if re.fullmatch(r"[a-z]{2}", v):
+            b["preferinte"]["limba"] = v
+        else:
+            erori.append(f"preferinte.limba = {pref['limba']!r}: codul limbii din două litere, de exemplu „ro” sau „en”")
+    return b, erori
+
+
+def incarca(dosar: Path | None = None) -> dict:
+    """brand/brand.json combinat cu implicitele. Fără fișier: implicitele. Cu greșeli: se oprește și spune exact ce e greșit."""
+    dosar = dosar or BRAND
+    f = dosar / "brand.json"
+    if not f.is_file():
+        return copy.deepcopy(IMPLICIT)
+    try:
+        date = json.loads(f.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"brand/brand.json nu e JSON valid (rândul {e.lineno}): {e.msg}. Rulează /personalizare ca să-l rescrii.") from None
+    b, erori = combina(date)
+    for k in ("logo", "font"):
+        if b[k] and not (dosar / b[k]).is_file():
+            erori.append(f"„{k}”: fișierul {b[k]} nu e în brand/")
+    if erori:
+        raise SystemExit("brand/brand.json are greșeli:\n" + "\n".join("- " + x for x in erori))
+    return b
+
+
+def stil(st: dict, b: dict) -> dict:
+    """Stilul ales cu accentul omului peste el (captions și chipurile își iau culoarea din JS, nu din CSS)."""
+    st = dict(st)
+    if b["culori"]["accent"]:
+        st["accent"] = b["culori"]["accent"]
+        st["accent_rgb"] = rgb(b["culori"]["accent"])
+    return st
+
+
+def css(b: dict) -> str:
+    """brand.css, pus după stilul ales: culorile și fontul omului. Gol dacă n-a setat nimic."""
+    linii, var = [], []
+    if b["font"]:
+        linii.append(f"@font-face{{font-family:'Brand';src:url('brand/font{Path(b['font']).suffix.lower()}');font-display:block}}")
+        var.append("--font-display:'Brand','Geist','Helvetica Neue',Arial,sans-serif")
+    if b["culori"]["accent"]:
+        var += [f"--accent:{b['culori']['accent']}", f"--accent-rgb:{rgb(b['culori']['accent'])}"]
+    if b["culori"]["accent_2"]:
+        var.append(f"--accent-2:{b['culori']['accent_2']}")
+    if var:
+        linii.append(":root{" + ";".join(var) + "}")
+    return "".join(x + "\n" for x in linii)
+
+
+def copiaza(b: dict, assets: Path, dosar: Path | None = None) -> None:
+    dosar = dosar or BRAND
+    tinta = assets / "brand"
+    tinta.mkdir(parents=True, exist_ok=True)
+    for k in ("logo", "font"):
+        if b[k]:
+            shutil.copy(dosar / b[k], tinta / f"{k}{Path(b[k]).suffix.lower()}")
+
+
+def logo_html(b: dict) -> str:
+    return f'<img class="kl" src="assets/brand/logo{Path(b["logo"]).suffix.lower()}" alt="">' if b["logo"] else ""
+
+
+def sunete(lista: list[tuple[float, str, float, float]], b: dict) -> list[tuple[float, str, float, float]]:
+    f = VOLUM_SUNETE[b["preferinte"]["sunete"]]
+    return [] if f == 0 else [(t, n, round(v * f, 3), d) for t, n, v, d in lista]
+
+
+def filtru_fata(b: dict) -> str:
+    return FILTRE_FATA[b["preferinte"]["filtru_fata"]]
+
+
+def limba(b: dict) -> str:
+    return b["preferinte"]["limba"]
+
+
+def rezumat(b: dict) -> str:
+    p = b["preferinte"]
+    return "\n".join([
+        f"nume: {b['nume'] or '-'}",
+        f"culori: {b['culori']['accent'] or 'ca stilul'} / {b['culori']['accent_2'] or 'ca stilul'}",
+        f"font: {b['font'] or 'Geist (al stilului)'}",
+        f"logo: {b['logo'] or '-'}",
+        f"CTA: {b['cta'] or '-'}",
+        f"captions: {'da' if p['captions'] else 'nu'} · carduri: {p['carduri']} · sunete: {p['sunete']} · "
+        f"filtru pe față: {p['filtru_fata']} · limba: {p['limba']}",
+    ])
+
+
+def main(argv: list[str] | None = None) -> int:
+    platforma.iesire_utf8()
+    print(rezumat(incarca()))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

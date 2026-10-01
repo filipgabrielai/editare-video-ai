@@ -11,3 +11,5 @@ renders/
 .superpowers/
 lucru-demo/
 exemple/demo-reel/clipuri/
+brand/*
+!brand/.gitkeep
