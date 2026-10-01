@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Descarcă ce nu vine din magazine: modelul Whisper și, pe Windows, whisper.cpp.
+"""Descarcă ce nu vine din magazine: modelul Whisper, pe Windows whisper.cpp, și clipul demo.
 
     python3 instalare/descarca.py model                       modelul implicit (large-v3-turbo, 1,6 GB)
     python3 instalare/descarca.py model --nume ggml-tiny.bin  modelul mic (pentru testele automate)
     python instalare/descarca.py whisper                      Windows: whisper.cpp oficial, în unelte/whisper/
+    python3 instalare/descarca.py demo                        clipul brut al reelului demo, în exemple/demo-reel/clipuri/
 
 Descărcarea merge într-un fișier .part și se redenumește doar dacă mărimea e cea așteptată:
 o descărcare întreruptă nu lasă un model stricat în urmă.
@@ -24,6 +25,8 @@ URL_MODEL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{nume}"
 WHISPER_VERSIUNE = "v1.9.2"   # ultima versiune cu arhive gata făcute pentru Windows (verificat 28 sept 2026)
 WHISPER_ARHIVA = "whisper-blas-bin-x64.zip"
 URL_WHISPER = "https://github.com/ggml-org/whisper.cpp/releases/download/{versiune}/{arhiva}"
+URL_DEMO = "https://github.com/filipgabrielai/editare-video-ai/releases/download/demo-reel-v1/demo-reel-v1.zip"
+EXEMPLE = platforma.RADACINA / "exemple"
 
 
 def url_model(nume: str) -> str:
@@ -104,16 +107,35 @@ def whisper_windows() -> None:
     print(f"whisper.cpp e în {platforma.UNELTE_WHISPER}")
 
 
+def demo() -> Path:
+    """Clipul brut al reelului demo (1080p, 2:20, 31 de duble), ca să încerci /editeaza-reel fără clipurile tale."""
+    tinta = EXEMPLE / "demo-reel"
+    clipuri = tinta / "clipuri"
+    if clipuri.is_dir() and any(clipuri.iterdir()):
+        print("Demo-ul e deja descărcat.")
+        return tinta
+    arhiva = tinta / "demo-reel-v1.zip"
+    print("Descarc clipul demo (~60 MB)...")
+    descarca(URL_DEMO, arhiva)
+    dezarhiveaza(arhiva, tinta)
+    arhiva.unlink()
+    print(f"Clipul demo e în {clipuri}")
+    return tinta
+
+
 def main(argv: list[str] | None = None) -> int:
     platforma.iesire_utf8()
-    p = argparse.ArgumentParser(description="Descarcă modelul Whisper sau whisper.cpp (Windows).")
+    p = argparse.ArgumentParser(description="Descarcă modelul Whisper, whisper.cpp (Windows) sau clipul demo.")
     sub = p.add_subparsers(dest="ce", required=True)
     m = sub.add_parser("model", help="modelul Whisper")
     m.add_argument("--nume", default=platforma.MODEL_IMPLICIT)
     sub.add_parser("whisper", help="whisper.cpp pentru Windows")
+    sub.add_parser("demo", help="clipul reelului demo")
     a = p.parse_args(argv)
     if a.ce == "model":
         model(a.nume)
+    elif a.ce == "demo":
+        demo()
     else:
         whisper_windows()
     return 0

@@ -104,3 +104,24 @@ class TestErori(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestDemo(unittest.TestCase):
+    def test_demo_se_dezarhiveaza_in_exemple(self):
+        with tempfile.TemporaryDirectory(prefix="demo ăî ") as d:
+            arhiva = Path(d) / "demo.zip"
+            with zipfile.ZipFile(arhiva, "w") as z:
+                z.writestr("clipuri/top-3-unelte-ai.mp4", "x")
+            with mock.patch.object(D, "URL_DEMO", arhiva.as_uri()), mock.patch.object(D, "EXEMPLE", Path(d) / "exemple"):
+                tinta = D.demo()
+            self.assertTrue((tinta / "clipuri" / "top-3-unelte-ai.mp4").is_file())
+            self.assertFalse((tinta / "demo-reel-v1.zip").exists())   # arhiva nu rămâne în urmă
+
+    def test_demo_deja_descarcat_nu_se_mai_descarca(self):
+        with tempfile.TemporaryDirectory() as d:
+            clipuri = Path(d) / "exemple" / "demo-reel" / "clipuri"
+            clipuri.mkdir(parents=True)
+            (clipuri / "top-3-unelte-ai.mp4").write_text("x")
+            with mock.patch.object(D, "EXEMPLE", Path(d) / "exemple"), mock.patch.object(D, "descarca") as dl:
+                D.demo()
+            dl.assert_not_called()
