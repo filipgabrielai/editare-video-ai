@@ -19,6 +19,7 @@ MAX_RANDURI, MAX_TEXT = 4, 34
 def norm(s: str) -> list[str]:
     s = unicodedata.normalize("NFD", s.lower())
     s = "".join(c for c in s if unicodedata.category(c) != "Mn").replace("-", " ")
+    s = re.sub(r"\.(?=[a-z])", " ", s)   # „3.Bolt.new” (Whisper lipește cuvintele) → 3 bolt new; „5.5” rămâne 55, ca „5,5”
     return re.sub(r"[^a-z0-9% ]", "", s).split()
 
 

@@ -16,6 +16,13 @@ class TestScenariu(unittest.TestCase):
     def test_norm_fara_diacritice_si_cratima(self):
         self.assertEqual(S.norm("Stânga, Code-ul!"), ["stanga", "code", "ul"])
 
+    def test_ancora_gasita_cand_whisper_lipeste_cuvintele_cu_punct(self):
+        # demo-ul pe copia 1080p: Whisper a scris „Locul 3.Bolt.new” și ancora „locul 3” nu se mai găsea
+        ws = [{"text": t, "start": k, "end": k + 0.5, "n": S.norm(t)} for k, t in enumerate(["Locul", "3.Bolt.new", "Construiește"])]
+        self.assertEqual(S.gaseste(ws, "locul 3"), (0, 1.5))
+        self.assertEqual(S.gaseste(ws, "bolt.new"), (1, 1.5))
+        self.assertEqual(S.norm("Opus 5.5"), S.norm("Opus 5,5"))   # punctul dintre cifre rămâne lipit
+
     def test_markup_scapa_html_si_face_bold(self):
         self.assertEqual(S.markup("cu **AI** <b>"), "cu <b>AI</b> &lt;b&gt;")
 
