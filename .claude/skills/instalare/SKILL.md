@@ -22,5 +22,6 @@ Scopul: omul ajunge la „Gata, poți edita.” fără să știe ce e un termina
 5. Rulează din nou verificarea, până când totul e `[ok]`.
 6. Proba: `python3 tests/proba_30s.py`. Dacă trece, îi spui „Gata, poți edita.” și ce urmează.
 7. Dacă ceva nu merge după două încercări, deschizi `docs/DEPANARE.md` și urmezi pașii de acolo.
+8. Îl întrebi dacă vrea să poată cere reeluri și din sistemul lui de Claude Code; dacă da, urmezi `/leaga-de-sistem`.
 
 Nu instala nimic fără să spui ce e. Nu folosi sudo. Nu rula comenzi care șterg sau schimbă setări de sistem în afara celor de mai sus.
