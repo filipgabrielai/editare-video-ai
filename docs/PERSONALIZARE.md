@@ -9,6 +9,7 @@
  "font": "Fontul meu.ttf",
  "logo": "logo.png",
  "cta": "scrie-mi **CURS** în privat",
+ "vocabular": ["Claude Code", "AI", "Ana Pop"],
  "preferinte": {"captions": true, "carduri": "normal", "sunete": "incete", "filtru_fata": "usor", "limba": "ro"}
 }
 ```
@@ -19,6 +20,8 @@
   (`.woff2`, `.ttf`, `.otf`), care trebuie să aibă diacriticele românești.
 - `logo`: fișierul tău, pus în `brand/` (nu intră în git).
 - `cta`: textul cardului de final; `**cuvânt**` iese colorat.
+- `vocabular`: numele și cuvintele pe care le spui des și le vrei scrise corect în captions (unelte, brandul tău, „AI”). Transcrierea
+  le primește din start și greșește mai rar („despre AI”, nu „despre ei”); ce mai scapă se repară cu corecturi, la fiecare reel.
 - `preferinte.captions`: `true` sau `false`.
 - `preferinte.carduri`: `normal` sau `putine` (doar hook, 1–2 carduri și finalul).
 - `preferinte.sunete`: `normale`, `incete` sau `oprite`.

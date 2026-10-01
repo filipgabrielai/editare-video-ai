@@ -55,7 +55,7 @@ def extrage_audio(clip: Path, lucru: Path, nume: str) -> tuple[Path, Path]:
     return wav, raw
 
 
-def transcrie(wav: Path, a: float, b: float, lucru: Path, limba: str = "ro") -> str:
+def transcrie(wav: Path, a: float, b: float, lucru: Path, limba: str = "ro", vocabular: str = "") -> str:
     seg = lucru / "dubla.wav"
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(wav), "-ss", f"{a:.3f}", "-to", f"{b:.3f}", str(seg)], check=True)
     cli = platforma.gaseste("whisper-cli")
@@ -63,7 +63,7 @@ def transcrie(wav: Path, a: float, b: float, lucru: Path, limba: str = "ro") -> 
         raise SystemExit("whisper-cli lipsește: rulează /instalare.")
     baza = platforma.RADACINA
     r = subprocess.run([cli, "-m", platforma.cale_pentru_unealta(platforma.model_whisper(), baza), "-l", limba, "-np", "-nt",
-                        "-f", platforma.cale_pentru_unealta(seg, baza)],
+                        *(["--prompt", vocabular] if vocabular else []), "-f", platforma.cale_pentru_unealta(seg, baza)],
                        cwd=baza, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode != 0:
         raise SystemExit(f"whisper-cli nu a pornit (cod {r.returncode}): " + " ".join((r.stderr or "").strip().splitlines()[-2:]))
@@ -75,6 +75,7 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Împarte clipurile pe duble și le transcrie local.")
     p.add_argument("sursa", help="folderul cu clipurile brute sau un singur clip")
     p.add_argument("--nume", help="numele reelului (implicit, numele folderului)")
+    p.add_argument("--vocabular", default="", help="nume și cuvinte din reel, cu virgulă, pe lângă cele din brand (\"bolt.new, Lovable\")")
     a = p.parse_args(argv)
     sursa = Path(a.sursa).expanduser()
     if not sursa.exists():
@@ -83,12 +84,13 @@ def main(argv: list[str] | None = None) -> int:
     lucru = dosar / "lucru"
     rezultat = []
     harta = proiect.clipuri(dosar)
-    lb = brand.limba(brand.incarca())
+    b = brand.incarca()
+    lb, voc = brand.limba(b), brand.prompt_whisper(b, a.vocabular)
     for nume, clip in harta.items():
         wav, _ = extrage_audio(clip, lucru, nume)
         d = durata(wav)
         for n, (x, y) in enumerate(detecteaza(wav), 1):
-            text = transcrie(wav, max(0.0, x - 0.15), min(d, y + 0.15), lucru, lb)
+            text = transcrie(wav, max(0.0, x - 0.15), min(d, y + 0.15), lucru, lb, voc)
             rezultat.append({"dubla": f"{nume}_{n:02d}", "clip": nume, "nr": n, "start": x, "end": y, "text": text})
             print(f"{nume}_{n:02d}  {x:7.2f}-{y:7.2f}  ({y - x:5.2f} s)  {text}", flush=True)
     with open(dosar / "duble.json", "w", encoding="utf-8") as f:

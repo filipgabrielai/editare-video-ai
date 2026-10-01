@@ -31,12 +31,16 @@ FILTRE_FATA = {   # retușul din CapCut, aproximat: netezire doar pe zonele plat
 }
 VOLUM_SUNETE = {"oprite": 0.0, "incete": 0.5, "normale": 1.0}
 FONTURI_REPO = {"geist": None, "instrument serif": "Instrument Serif"}   # fonturile libere din fonturi/; Geist e cel al stilului
-IMPLICIT = {"nume": "", "culori": {"accent": None, "accent_2": None}, "font": None, "logo": None, "cta": "",
+IMPLICIT = {"nume": "", "culori": {"accent": None, "accent_2": None}, "font": None, "logo": None, "cta": "", "vocabular": [],
             "preferinte": {"captions": True, "carduri": "normal", "sunete": "normale", "filtru_fata": "niciunul", "limba": "ro"}}
 
 
+def _fara_semne(s: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+
+
 def _simplu(s: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFD", s.lower()) if unicodedata.category(c) != "Mn").strip()
+    return _fara_semne(s.lower()).strip()
 
 
 def culoare(v) -> str | None:
@@ -106,6 +110,12 @@ def combina(date) -> tuple[dict, list[str]]:
                 erori.append(f"„font” e „Geist”, „Instrument Serif” sau numele unui fișier din brand/ ({', '.join(ext)})")
             else:
                 erori.append(f"„{k}” e numele unui fișier din brand/ ({', '.join(ext)})")
+    if "vocabular" in date:
+        v = date["vocabular"].split(",") if isinstance(date["vocabular"], str) else date["vocabular"]
+        if isinstance(v, list) and all(isinstance(x, str) for x in v):
+            b["vocabular"] = [x.strip() for x in v if x.strip()][:40]
+        else:
+            erori.append('„vocabular” e o listă de cuvinte, de exemplu ["Claude Code", "AI"]')
     pref = date.get("preferinte") or {}
     if "captions" in pref:
         if isinstance(pref["captions"], bool):
@@ -200,6 +210,16 @@ def limba(b: dict) -> str:
     return b["preferinte"]["limba"]
 
 
+def prompt_whisper(b: dict, in_plus: str = "") -> str:
+    """Vocabularul dat lui Whisper din start (numele de unelte, „AI”): le scrie corect în loc de „despre ei” sau „un LTE-AI”.
+    Pe Windows, fără diacritice: whisper.cpp citește argumentele în codepage-ul vechi și „ș” ar ajunge „?”."""
+    cuvinte = b["vocabular"] + [x.strip() for x in in_plus.split(",") if x.strip()]
+    if not cuvinte:
+        return ""
+    text = ", ".join(cuvinte) + "."
+    return _fara_semne(text) if platforma.sistem() == "windows" else text
+
+
 def rezumat(b: dict) -> str:
     p = b["preferinte"]
     return "\n".join([
@@ -208,6 +228,7 @@ def rezumat(b: dict) -> str:
         f"font: {b['font'] or 'Geist (al stilului)'}",
         f"logo: {b['logo'] or '-'}",
         f"CTA: {b['cta'] or '-'}",
+        f"vocabular: {', '.join(b['vocabular']) or '-'}",
         f"captions: {'da' if p['captions'] else 'nu'} · carduri: {p['carduri']} · sunete: {p['sunete']} · "
         f"filtru pe față: {p['filtru_fata']} · limba: {p['limba']}",
     ])

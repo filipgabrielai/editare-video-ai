@@ -50,7 +50,10 @@ class TestCuvinte(unittest.TestCase):
                 mock.patch.object(cuvinte.platforma, "cale_pentru_unealta", side_effect=lambda p, b: str(p)):
             (Path(d) / "lucru").mkdir()
             cuvinte.transcrie_dubla(Path(d), {"dubla": "c_01", "clip": "c", "start": 1.0, "end": 2.0}, "en")
+            cuvinte.transcrie_dubla(Path(d), {"dubla": "c_02", "clip": "c", "start": 3.0, "end": 4.0}, "ro", "Claude Code, AI.")
         self.assertEqual(apeluri[0][apeluri[0].index("-l") + 1], "en")
+        self.assertNotIn("--prompt", apeluri[0])
+        self.assertEqual(apeluri[1][apeluri[1].index("--prompt") + 1], "Claude Code, AI.")
 
 
 if __name__ == "__main__":

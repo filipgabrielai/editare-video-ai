@@ -17,7 +17,8 @@ Scopul: `brand/brand.json` scris și o probă de stil pe care omul o vede și o 
    - fontul: implicit Geist (cel din stil); din kit poate alege și Instrument Serif (cu serife). Dacă vrea fontul lui, îi ceri fișierul
      (`.woff2`, `.ttf`, `.otf`), îl copiezi în `brand/` și îi spui că trebuie să aibă diacriticele românești și licență care permite
      folosirea în video;
-   - CTA-ul de final, cum îl spune de obicei („urmărește-mă pentru mai multe”, „scrie-mi CURS în privat”).
+   - CTA-ul de final, cum îl spune de obicei („urmărește-mă pentru mai multe”, „scrie-mi CURS în privat”);
+   - vocabularul: numele pe care le spune des și le vrea scrise corect în captions (uneltele lui, brandul lui, „AI”). Câteva, nu zeci.
 3. Preferințele: captions (da), carduri (normal; „puține” = doar hook, 1–2 carduri și finalul), sunete (normale / încete / oprite),
    filtrul pe față (niciunul / ușor / mediu: netezește pielea și luminează puțin, ca retușul din CapCut, pe toată imaginea), limba (română).
 4. Scrii `brand/brand.json` și rulezi `python3 unelte/brand.py`. Dacă spune ce e greșit, repari și rulezi din nou.

@@ -53,6 +53,20 @@ class TestDuble(unittest.TestCase):
             duble.transcrie(Path(d) / "a.wav", 0.0, 1.0, Path(d), "en")
         w = apeluri[-1]
         self.assertEqual(w[w.index("-l") + 1], "en")
+        self.assertNotIn("--prompt", w)
+
+    def test_vocabularul_ajunge_la_whisper(self):
+        apeluri = []
+
+        def fals(cmd, **kw):
+            apeluri.append(cmd)
+            return subprocess.CompletedProcess(cmd, 0, "despre AI", "")
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(duble.subprocess, "run", side_effect=fals), \
+                mock.patch.object(duble.platforma, "gaseste", return_value="whisper-cli"), \
+                mock.patch.object(duble.platforma, "cale_pentru_unealta", side_effect=lambda p, b: str(p)):
+            duble.transcrie(Path(d) / "a.wav", 0.0, 1.0, Path(d), "ro", "Claude Code, AI.")
+        w = apeluri[-1]
+        self.assertEqual(w[w.index("--prompt") + 1], "Claude Code, AI.")
 
 
 if __name__ == "__main__":

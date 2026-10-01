@@ -3,6 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from unelte import brand  # noqa: E402
@@ -104,6 +105,25 @@ class TestBrand(unittest.TestCase):
             brand.copiaza(b, Path(d) / "assets", Path(d))
             self.assertEqual(list((Path(d) / "assets" / "brand").iterdir()), [])
         self.assertIsNone(brand.combina({"font": "Geist"})[0]["font"])   # Geist e fontul stilului
+
+    def test_vocabularul_pentru_whisper(self):
+        # ghidul @pauloshimas + proba pe demo: cu numele date din start, Whisper scrie „despre AI”, nu „despre ei”
+        b, erori = brand.combina({"vocabular": [" Claude Code ", "AI", "", "bolt.new"]})
+        self.assertEqual(erori, [])
+        self.assertEqual(b["vocabular"], ["Claude Code", "AI", "bolt.new"])
+        self.assertEqual(brand.prompt_whisper(b), "Claude Code, AI, bolt.new.")
+        self.assertEqual(brand.prompt_whisper(b, "Lovable, Codex"), "Claude Code, AI, bolt.new, Lovable, Codex.")
+        self.assertEqual(brand.combina({"vocabular": "Claude Code, AI"})[0]["vocabular"], ["Claude Code", "AI"])
+        self.assertEqual(brand.prompt_whisper(brand.IMPLICIT), "")
+        self.assertIn("„vocabular”", brand.combina({"vocabular": 5})[1][0])
+
+    def test_vocabularul_fara_diacritice_pe_windows(self):
+        # whisper.cpp pe Windows citește argumentele în codepage-ul vechi: „ș” ar ajunge „?” în prompt
+        b, _ = brand.combina({"vocabular": ["Știri AI", "București"]})
+        with mock.patch.object(brand.platforma, "sistem", return_value="windows"):
+            self.assertEqual(brand.prompt_whisper(b), "Stiri AI, Bucuresti.")
+        with mock.patch.object(brand.platforma, "sistem", return_value="mac"):
+            self.assertEqual(brand.prompt_whisper(b), "Știri AI, București.")
 
 
 if __name__ == "__main__":

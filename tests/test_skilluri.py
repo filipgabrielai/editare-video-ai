@@ -30,6 +30,12 @@ class TestSkilluri(unittest.TestCase):
         self.assertIn("din folderul kitului", ghid)      # sesiunea poate fi deschisă în alt folder decât kitul
         self.assertIn("`/leaga-de-sistem`", ghid)
 
+    def test_omul_afla_cum_da_feedback_si_ce_e_vocabularul(self):
+        readme = (RAD / "README.md").read_text(encoding="utf-8")
+        self.assertIn("## Cum îi dai feedback", readme)
+        self.assertIn("`vocabular`", (RAD / "docs" / "PERSONALIZARE.md").read_text(encoding="utf-8"))
+        self.assertIn("--vocabular", (RAD / ".claude" / "skills" / "editeaza-reel" / "SKILL.md").read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -35,6 +35,12 @@ Claude îl aduce, îi citește regulile și te duce prin instalare. De acolo con
 3. **Editare:** pune clipurile într-un folder și scrie `/editeaza-reel "<calea către folder>"`. Primești în `proiecte/` reelul, gata de
    postat după ce te uiți pe el. Vrei să încerci fără clipurile tale: `python3 instalare/descarca.py demo` și urmezi `exemple/demo-reel/README.md`.
 
+## Cum îi dai feedback
+
+Te uiți pe draft și îi scrii ca unui editor: o schimbare pe rând, cu secunda și cu ce vrei să vezi, nu cum s-o facă.
+„La 0:14 e o pauză prea lungă.” „La 0:23 nu se aude finalul cuvântului.” „La final scrie «ei» în loc de «AI».”
+Claude repară, randează un draft nou și îl verifică din nou. FINAL se face doar când zici tu.
+
 ## Din sistemul tău de Claude Code
 
 Dacă ai deja un sistem în Claude Code, scrie `/leaga-de-sistem`: kitul rămâne în folderul lui, iar din orice proiect poți cere

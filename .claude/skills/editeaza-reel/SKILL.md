@@ -13,8 +13,11 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
    (două minute); dacă vrea direct reelul, continui cu stilul Studio.
 1. **Dublele:** `python3 procese/reel/duble.py "<folder sau clip>" --nume "<numele reelului>"`. Citește TOATE dublele, nu doar ultima.
    De regulă se păstrează ultima dublă întreagă a fiecărei fraze, dar omul schimbă cuvinte între duble și uneori decide altfel;
-   ce nu e clar, îl întrebi. Textele de tip „Mulțumim pentru vizionare!” pe o dublă scurtă sunt Whisper care aude liniștea.
-2. **Cuvintele** pe dublele alese: `python3 procese/reel/cuvinte.py proiecte/<slug> <dubla> <dubla> ...`.
+   ce nu e clar, îl întrebi. Textele fără legătură pe o dublă scurtă („Mulțumim pentru vizionare!”, „Sous-titrage…”) sunt Whisper
+   care aude liniștea.
+2. **Cuvintele** pe dublele alese: `python3 procese/reel/cuvinte.py proiecte/<slug> <dubla> <dubla> ... --vocabular "<nume>"`. În
+   `--vocabular` pui, cu virgulă, numele de unelte și de oameni pe care le-ai văzut în duble, scrise corect („bolt.new, Lovable”):
+   Whisper le primește din start, pe lângă vocabularul din brand, și greșește mai rar.
 3. **Tăietura:** scrii `proiecte/<slug>/bucati.json` (`[{"dubla": "...", "de_la": null, "pana_la": null}]`; „cuvânt#2” = a
    doua apariție, „cuvânt@ultimul” = ultima), apoi `python3 procese/reel/taietura.py proiecte/<slug>`. Verifici în
    `transcript.json` că primul și ultimul cuvânt al fiecărei bucăți sunt întregi. Când scurtezi, scoți fraze sau blocuri întregi,
@@ -41,5 +44,6 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
    cauza și randezi din nou.
 10. **Livrarea:** scrii `proiecte/<slug>/DESIGN.md` (ce ai ales și de ce: dublele, ce ai scos, cadrul, cardurile, corecturile);
     `VERIFY.md` îl scrie randarea. Îi spui unde e fișierul, durata, ce ai verificat, ce ai scos și ce ai corectat. După OK-ul
-    lui, redenumești în „<Titlu> FINAL.mp4”. Nu publici și nu urci nimic. Filtrul pe față, captions și sunetele vin din
+    lui, redenumești în „<Titlu> FINAL.mp4”. Nu publici și nu urci nimic. Îi spui și cum îți dă feedback: o schimbare pe rând,
+    cu secunda („la 0:14 e o pauză prea lungă”). Filtrul pe față, captions și sunetele vin din
     preferințele din brand; nu le schimbi din scenariu.

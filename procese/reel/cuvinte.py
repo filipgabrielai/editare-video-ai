@@ -36,7 +36,7 @@ def decalaj_pe_sunet(rms: list[float], prag_db: float, start: float, end: float)
     return max(0.0, round(on * taietura.PAS - 0.15, 3))
 
 
-def transcrie_dubla(dosar: Path, d: dict, limba: str = "ro") -> Path:
+def transcrie_dubla(dosar: Path, d: dict, limba: str = "ro", vocabular: str = "") -> Path:
     tinta = dosar / "transcripte" / f"{d['dubla']}.json"
     if tinta.exists():
         return tinta
@@ -56,7 +56,7 @@ def transcrie_dubla(dosar: Path, d: dict, limba: str = "ro") -> Path:
     baza = platforma.RADACINA
     rel = lambda p: platforma.cale_pentru_unealta(p, baza)  # noqa: E731
     r = subprocess.run([cli, "-m", rel(platforma.model_whisper()), "-l", limba, "-ml", "1", "-sow", "-oj",
-                        "-of", rel(lucru / d["dubla"]), "-np", "-f", rel(seg)],
+                        "-of", rel(lucru / d["dubla"]), "-np", *(["--prompt", vocabular] if vocabular else []), "-f", rel(seg)],
                        cwd=baza, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode != 0:
         raise SystemExit(f"whisper-cli nu a pornit (cod {r.returncode}): " + " ".join((r.stderr or "").strip().splitlines()[-2:]))
@@ -70,17 +70,23 @@ def transcrie_dubla(dosar: Path, d: dict, limba: str = "ro") -> Path:
 
 def main(argv: list[str] | None = None) -> int:
     platforma.iesire_utf8()
-    argv = sys.argv[1:] if argv is None else argv
+    argv = list(sys.argv[1:] if argv is None else argv)
+    in_plus = ""
+    if "--vocabular" in argv:
+        k = argv.index("--vocabular")
+        in_plus = argv[k + 1] if k + 1 < len(argv) else ""
+        del argv[k:k + 2]
     if len(argv) < 2:
-        raise SystemExit("Folosire: cuvinte.py proiecte/<slug> <dubla> [<dubla> ...]")
+        raise SystemExit('Folosire: cuvinte.py proiecte/<slug> <dubla> [<dubla> ...] [--vocabular "bolt.new, Lovable"]')
     dosar = Path(argv[0])
     with open(dosar / "duble.json", encoding="utf-8") as f:
         toate = {d["dubla"]: d for d in json.load(f)}
-    lb = brand.limba(brand.incarca())
+    b = brand.incarca()
+    lb, voc = brand.limba(b), brand.prompt_whisper(b, in_plus)
     for nume in argv[1:]:
         if nume not in toate:
             raise SystemExit(f"Dubla {nume} nu există în duble.json (sunt: {', '.join(list(toate)[:12])}...).")
-        tinta = transcrie_dubla(dosar, toate[nume], lb)
+        tinta = transcrie_dubla(dosar, toate[nume], lb, voc)
         with open(tinta, encoding="utf-8") as f:
             ws = json.load(f)["words"]
         print(f"{nume}: {len(ws)} cuvinte | {' '.join(w['text'] for w in ws)[:120]}")
