@@ -81,11 +81,13 @@ def sfarsit_sunet(rms: list[float], k: int, prag_db: float) -> int:
     return j
 
 
-def debut(rms: list[float], i_s: int, i_e: int, prag_db: float) -> int:
+def debut(rms: list[float], i_s: int, i_e: int, prag_db: float, de_la: int = 0) -> int:
     """Indexul unde începe vorbirea din jurul primului cuvânt (Whisper îl pune cu până la ~150 ms după și ~0,4 s înainte de
-    sunet). Un sunet scurt (sub 0,12 s) și slab (cu 15 dB sub vorbire), urmat de liniște, e respirație sau buze, nu vorbire."""
+    sunet). Un sunet scurt (sub 0,12 s) și slab (cu 15 dB sub vorbire), urmat de liniște, e respirație sau buze, nu vorbire.
+    Căutarea pornește cel mai devreme de la `de_la` (după cuvântul anterior): altfel găsea cuvântul anterior și bucata pornea
+    în coada lui."""
     varf = max(rms[i_s:i_e + 1], default=0.0)
-    k = max(0, i_s - 70)
+    k = max(0, i_s - 70, de_la)
     while k < min(len(rms), i_s + 120):
         if sustinut(rms, k, prag_db):
             sf = sfarsit_sunet(rms, k, prag_db)
@@ -100,7 +102,7 @@ def debut(rms: list[float], i_s: int, i_e: int, prag_db: float) -> int:
 def capete(rms: list[float], s: float, e: float, lim_s: float, lim_e: float, prag_db: float = PRAG) -> tuple[float, float]:
     """Începutul și sfârșitul bucății, pe sunet (peste prag), cu pad-ul, fără să treacă de cuvintele vecine, pe grila de cadre."""
     i_s, i_e = int(s / PAS), int(e / PAS)
-    on = max(debut(rms, i_s, i_e, prag_db), int(lim_s / PAS))
+    on = max(debut(rms, i_s, i_e, prag_db, int(lim_s / PAS)), int(lim_s / PAS))
     off, tacere = i_e, 0
     for k in range(max(0, i_e - 30), min(len(rms), i_e + 24, int(lim_e / PAS))):
         if sustinut(rms, k, prag_db, inapoi=True):

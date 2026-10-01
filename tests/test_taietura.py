@@ -78,6 +78,15 @@ class TestCapete(unittest.TestCase):
         a0, _ = T.capete(rms, 0.58, 1.98, 0.0, 1e9)
         self.assertTrue(0.48 <= a0 <= 0.52, a0)
 
+    def test_inceputul_nu_se_cauta_inaintea_cuvantului_anterior(self):
+        # demo-ul pe copia 1080p: Whisper a pus „îți” cu 0,16 s înainte de sunet, căutarea a dat peste „repară” (cuvântul
+        # anterior), iar limita de după el a lăsat bucata să pornească în coada lui stinsă, cu 0,13 s înainte de „îți”
+        rms = self.rms(1.0, 2.0)
+        for k in range(round(0.6 / T.PAS), round(0.85 / T.PAS)):
+            rms[k] = -25.0
+        a0, _ = T.capete(rms, 0.88, 1.98, 0.9, 1e9)
+        self.assertTrue(0.94 <= a0 <= 0.97, a0)
+
     def test_coada_lungeste_capatul_pe_grila_fara_sa_treaca_de_cuvantul_urmator(self):
         self.assertAlmostEqual(T.cu_coada(2.0, 0.1, 1e9), 2.1)
         self.assertAlmostEqual(T.cu_coada(2.0, 0.1, 2.05) * T.FPS, round(T.cu_coada(2.0, 0.1, 2.05) * T.FPS))
