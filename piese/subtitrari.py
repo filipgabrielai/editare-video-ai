@@ -29,7 +29,7 @@ def grupuri(ws: list[dict], cuts: list[float], max_n: int = 3, max_car: int = MA
 def captions(gr: list[list[dict]], durata: float, accent: str) -> tuple[list[str], list[str]]:
     html, js = [], []
     for gi, g in enumerate(gr):
-        t_in = g[0]["start"] - 0.03
+        t_in = max(0.0, g[0]["start"] - 0.03)   # niciodată înainte de zero: GSAP ar împinge tot timeline-ul
         t_out = min((gr[gi + 1][0]["start"] - 0.03) if gi + 1 < len(gr) else durata, g[-1]["end"] + 0.9)
         spans = "".join(f'<span class="cw" id="cw-{gi}-{k}">{S.esc(w["text"])}</span>' for k, w in enumerate(g))
         html.append(f'<div class="cap" id="cap-{gi}">{spans}</div>')

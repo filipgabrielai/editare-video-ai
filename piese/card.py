@@ -19,7 +19,7 @@ def construieste(ctx: Context) -> Fragment:
     carduri = ctx.sc["carduri"]
     intrari = []
     for c in carduri:
-        intrari.append(0.05 if c["ancora"] == "start" else ctx.ancora(c["ancora"]) - 0.05)
+        intrari.append(0.05 if c["ancora"] == "start" else max(0.0, ctx.ancora(c["ancora"]) - 0.05))
     umbra_scurta = False
     for k, c in enumerate(carduri):
         t0 = intrari[k]

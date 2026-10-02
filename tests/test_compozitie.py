@@ -153,6 +153,21 @@ class TestCompozitie(unittest.TestCase):
         self.assertEqual([len(g) for g in C.grupuri(ws, [], max_car=22)], [1, 2])
         self.assertEqual([len(g) for g in C.grupuri(ws, [], max_car=34)], [2, 1])   # „îmbunătățește videoclipurile” are 28
 
+    def test_nimic_nu_intra_pe_timeline_inainte_de_zero(self):
+        # cu 0,02 s înaintea primului cuvânt, prima subtitrare (cu 0,03 s înainte de cuvânt) primea un timp negativ, iar GSAP
+        # împingea atunci TOT timeline-ul: zoomul și subtitrările cădeau cu 1–2 cadre după imagine (draftul 16:9 din 2 oct)
+        ws = [{"text": "Videoul", "start": 0.02, "end": 0.3}, {"text": "ăsta", "start": 0.3, "end": 0.6}]
+        _, js = C.captions(C.grupuri(ws, []), 2.0, "#38bdf8")
+        self.assertEqual(C.pozitii_negative(js), [])
+        sc = {"stil": "studio", "carduri": [{"id": "a", "ancora": "Videoul", "kicker": "A", "randuri": [{"text": "x"}]}]}
+        for w in ws:
+            w["n"] = S.norm(w["text"])
+        self.assertEqual(C.pozitii_negative(C.planifica(sc, ws, [], 2.0, S.stil("studio"))["js"]), [])
+
+    def test_o_pozitie_negativa_e_prinsa(self):
+        linii = ['tl.set("#a", {x:1}, -0.010);', 'tl.to("#b", {x:-5, duration:0.2}, 0.500);', 'tl.fromTo("#c", {y:-12}, {y:0}, -1);']
+        self.assertEqual(C.pozitii_negative(linii), [linii[0], linii[2]])
+
     def test_logourile_in_locul_iconitei(self):
         sc = {"stil": "studio", "logo_inversat": ["openai"], "carduri": [{"id": "l1", "ancora": "start", "kicker": "LOCUL 1",
               "randuri": [{"text": "**Claude Code** și **Codex**", "logo": ["claude", "openai"]}]}]}

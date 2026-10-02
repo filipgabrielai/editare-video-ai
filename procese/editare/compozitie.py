@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import shutil
 import subprocess
 import sys
@@ -49,6 +50,12 @@ def planifica(sc: dict, ws: list[dict], cuts: list[float], durata: float, st: di
     fr = [p.construieste(ctx) for p in (zoom, titlu, card)]
     return {"html": [x for f in fr for x in f.html], "js": [x for f in fr for x in f.js], "sfx": ctx.sunete.lista,
             "beats": [x for f in fr for x in f.beats], "intervale": [x for f in fr for x in f.intervale]}
+
+
+def pozitii_negative(linii: list[str]) -> list[str]:
+    """Liniile de timeline puse înainte de zero. Una singură ajunge ca GSAP să împingă tot timeline-ul cu atât: animațiile cad
+    apoi după imagine și după sunet, cu un cadru sau două."""
+    return [x for x in linii if re.search(r",\s*-\d[\d.]*\);\s*$", x)]
 
 
 def aplica_preferinte(plan: dict, cap: tuple[list[str], list[str]], b: dict) -> tuple[list[str], list[str]]:
@@ -183,6 +190,9 @@ def main(argv: list[str] | None = None) -> int:
     plan = planifica(sc, ws, cuts, durata, st, logouri, brand.logo_html(b), fmt)
     cap_html, cap_js = aplica_preferinte(plan, captions(grupuri(ws, cuts, max_car=formate.MAX_CAR[fmt]), durata, st["accent"]), b)
     pregateste_assets(dosar, sc["stil"], b, fmt)
+    if (negative := pozitii_negative(plan["js"] + cap_js)):
+        print("eroare: animații puse înainte de secunda zero (ar împinge tot timeline-ul):\n  " + "\n  ".join(negative[:5]))
+        return 1
     (dosar / "index.html").write_text(pagina(sc, plan, cap_html, cap_js, durata, fmt), encoding="utf-8")
     with open(dosar / "intervale.json", "w", encoding="utf-8") as f:
         json.dump(plan["intervale"], f, indent=1)
