@@ -6,6 +6,8 @@
 bucati.json (scris când alegi dublele): [{"dubla": "IMG_1544_03", "de_la": null, "pana_la": "aplicație#2"}, ...]
 de_la / pana_la: primul / ultimul cuvânt păstrat; „text#n” = a n-a apariție, „text@ultimul” = ultima; null = de la primul /
 până la ultimul cuvânt al dublei; "coada": 0.1 = secunde în plus la capăt, când omul spune că finalul unui cuvânt nu se aude.
+O bucată care continuă fraza (începe cu „și”, sau are "strans": true) se lipește de cea dinainte fără pauză; "strans": false o
+lasă cu pauza dintre fraze. Ultima bucată ține 0,25 s din filmare după ultimul cuvânt ("coada": 0 o scoate).
 Capetele se pun pe sunet: înapoi până sub −50 dB, cu 0,05 s înainte și 0,02 s după (pauza la tăietură iese de 0,06–0,10 s,
 ritmul care sună natural), fără să intre în cuvântul vecin. Fiecare bucată are intrarea ei (cu -ss), trece prin fps=60 și e
 tăiată la numărul exact de cadre: clipurile de telefon au ~59,97 fps, iar tăiatul pe timpi pierdea sau adăuga un cadru.
@@ -20,17 +22,24 @@ from __future__ import annotations
 import array
 import json
 import math
+import re
 import subprocess
 import sys
+import unicodedata
+import wave
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from procese.editare import duble  # noqa: E402
 from unelte import brand, formate, platforma, proiect  # noqa: E402
 
 FPS = 60
 PRAG = -50.0
 PAD_IN, PAD_OUT = 0.05, 0.02
 PAS = 0.005
+VOCE = -40.0                                  # peste asta e vorbire, pe ferestre de 10 ms la 16 kHz
+COADA_STRANS, DEBUT_STRANS = -32.0, -42.0     # măsurate pe ce a strâns Filip de mână în reelurile postate (1 oct 2026)
+COADA_FINAL = 0.25                            # cât rămâne omul pe ecran după ultimul cuvânt, cu gura închisă
 
 
 def norm_cuvant(t: str) -> str:
@@ -68,6 +77,23 @@ def prag(rms: list[float]) -> float:
     return max(PRAG, min(podea + 10, -38.0))
 
 
+def fara_semne(t: str) -> str:
+    t = unicodedata.normalize("NFD", t.lower())
+    return re.sub(r"[^a-z0-9]", "", "".join(c for c in t if unicodedata.category(c) != "Mn"))
+
+
+def rms10_db(wav: Path) -> list[float]:
+    """Nivelul pe ferestre de 10 ms, din wav-ul de 16 kHz al dublelor. Îmbinările strânse se măsoară aici, nu pe fișierul de
+    8 kHz: „ș” și „s” au energia peste 4 kHz și acolo nu se văd."""
+    with wave.open(str(wav), "rb") as w:
+        pas = w.getframerate() // 100
+        a = array.array("h")
+        a.frombytes(w.readframes(w.getnframes()))
+    if sys.byteorder == "big":
+        a.byteswap()
+    return [20 * math.log10(math.sqrt(sum(x * x for x in a[i:i + pas]) / pas) / 32768 + 1e-9) for i in range(0, len(a) - pas, pas)]
+
+
 def sustinut(rms: list[float], k: int, prag_db: float, inapoi: bool = False) -> bool:
     """Sunet care ține (cel puțin 3 din 6 ferestre de 5 ms peste prag), nu un clic de buze sau de microfon de 5–10 ms."""
     fereastra = rms[max(0, k - 5):k + 1] if inapoi else rms[k:k + 6]
@@ -100,8 +126,8 @@ def debut(rms: list[float], i_s: int, i_e: int, prag_db: float, de_la: int = 0) 
     return i_s
 
 
-def capete(rms: list[float], s: float, e: float, lim_s: float, lim_e: float, prag_db: float = PRAG) -> tuple[float, float]:
-    """Începutul și sfârșitul bucății, pe sunet (peste prag), cu pad-ul, fără să treacă de cuvintele vecine, pe grila de cadre."""
+def capete_sunet(rms: list[float], s: float, e: float, lim_s: float, lim_e: float, prag_db: float = PRAG) -> tuple[float, float]:
+    """Unde începe și unde se termină sunetul bucății, în secunde, fără pad și fără să intre în cuvintele vecine."""
     i_s, i_e = int(s / PAS), int(e / PAS)
     on = max(debut(rms, i_s, i_e, prag_db, int(lim_s / PAS)), int(lim_s / PAS))
     off, tacere = i_e, 0
@@ -112,9 +138,73 @@ def capete(rms: list[float], s: float, e: float, lim_s: float, lim_e: float, pra
             tacere += 1
             if tacere >= 50 and k > i_e:
                 break
-    a0 = round(max(0.0, on * PAS - PAD_IN) * FPS) / FPS
-    a1 = round(min(off * PAS + PAD_OUT, lim_e) * FPS) / FPS
+    return on * PAS, off * PAS
+
+
+def capete(rms: list[float], s: float, e: float, lim_s: float, lim_e: float, prag_db: float = PRAG) -> tuple[float, float]:
+    """Începutul și sfârșitul bucății, pe sunet (peste prag), cu pad-ul, fără să treacă de cuvintele vecine, pe grila de cadre."""
+    on, sf = capete_sunet(rms, s, e, lim_s, lim_e, prag_db)
+    a0 = round(max(0.0, on - PAD_IN) * FPS) / FPS
+    a1 = round(min(sf + PAD_OUT, lim_e) * FPS) / FPS
     return a0, a1
+
+
+def e_strans(b: dict, primul_cuvant: str, k: int) -> bool:
+    """Bucata continuă fraza celei dinainte și se lipește aproape fără pauză: cerut în bucati.json ("strans": true / false),
+    altfel când începe cu „și”. Între fraze rămâne pauza de 0,06–0,10 s."""
+    if k == 0:
+        return False
+    if "strans" in b:
+        return bool(b["strans"])
+    return fara_semne(primul_cuvant) == "si"
+
+
+def debut_strans(r10: list[float], on: float, e: float, lim_s: float) -> float:
+    """Începutul strâns: primul sunet care ține peste −42 dB în cele 0,12 s dinaintea vocii, fără pad."""
+    k0 = max(0, int((on - 0.05) / 0.01))
+    v0 = next((k for k in range(k0, min(len(r10) - 1, int(e / 0.01))) if r10[k] > VOCE and r10[k + 1] > VOCE), None)
+    if v0 is None:
+        return max(on, lim_s)
+    k = max(0, v0 - 12)
+    while k < v0 and not (r10[k] > DEBUT_STRANS and r10[k + 1] > DEBUT_STRANS):
+        k += 1
+    return max(k * 0.01, lim_s)
+
+
+def sfarsit_strans(r10: list[float], on: float, sf: float) -> float:
+    """Sfârșitul strâns: ultima fereastră peste −32 dB, plus 0,04 s. Niciodată după sfârșitul normal."""
+    k = min(len(r10) - 1, int(sf / 0.01))
+    while k > int(on / 0.01) and r10[k] <= COADA_STRANS:
+        k -= 1
+    return min(sf, (k + 1) * 0.01 + 0.04)
+
+
+def capete_bucata(on: float, sf: float, lim_s: float, lim_e: float, r10: list[float] | None, strans_in: bool, strans_out: bool,
+                  asculta=None, ultim: str = "", prim: str = "") -> tuple[float, float, bool]:
+    """Capetele bucății pe grila de cadre. Normal: 0,05 s înainte de sunet și 0,02 s după. Strâns: pe sunet, fără pad.
+    Plasa de siguranță: bucata strânsă se ascultă (asculta(a, b) întoarce textul). Sfârșitul strâns mânca „-ri” din
+    „videoclipuri”: dacă ultimul cuvânt nu mai iese la fel, rămâne sfârșitul normal. Începutul strâns sărea peste un „ș” slab
+    („Și dacă vrei”, cu „ș” la −50 dB, se auzea „Dacă vrei”): dacă primul cuvânt nu se mai aude, bucata pornește pe sunetul
+    găsit de tăietura normală, tot fără pad. Întoarce și dacă sfârșitul a rămas strâns."""
+    t0 = debut_strans(r10, on, sf, lim_s) if strans_in else max(0.0, on - PAD_IN)
+    a0 = round(t0 * FPS) / FPS
+    a1 = round(min(sf + PAD_OUT, lim_e) * FPS) / FPS
+    t1 = sfarsit_strans(r10, on, sf) if strans_out else sf
+    if asculta and (strans_in or strans_out):
+        cuv = asculta(a0, t1 if strans_out else min(sf, a0 + 2.0)).split()
+        if strans_in and prim and not (cuv and fara_semne(cuv[0]) == fara_semne(prim)):
+            a0 = round(max(on, lim_s) * FPS) / FPS
+        if strans_out and not (cuv and fara_semne(cuv[-1]) == fara_semne(ultim)):
+            strans_out = False
+    if strans_out:
+        a1 = round(t1 * FPS) / FPS
+    return a0, a1, strans_out
+
+
+def coada_bucatii(b: dict, ultima: bool) -> float:
+    """Secundele în plus la capăt: "coada" din bucati.json; la ultima bucată, implicit 0,25 s din filmare după ultimul cuvânt
+    (fără ele videoul se termină pe ultima silabă și pare tăiat). Nu e liniște pentru animații și nu e cadru înghețat."""
+    return b.get("coada", COADA_FINAL if ultima else 0.0)
 
 
 def cu_coada(a1: float, coada: float, lim_e: float) -> float:
@@ -155,7 +245,8 @@ def filtre(seg: list[tuple[str, float, float]], s0s: list[float], extra: str = "
         parti.append(f"[{k}:v:0]trim={max(0.0, r0 - J):.5f}:{r1 + 4 * J:.5f},setpts=PTS-STARTPTS,fps={FPS},trim=end_frame={n},"
                      f"setpts=PTS-STARTPTS,scale={w}:{h}:force_original_aspect_ratio=increase:flags=lanczos,crop={w}:{h},setsar=1"
                      f"{',' + extra if extra else ''}[v{k}];"
-                     f"[{k}:a:0]atrim={r0:.5f}:{r1:.5f},asetpts=PTS-STARTPTS,aresample=48000[a{k}]")
+                     f"[{k}:a:0]atrim={r0:.5f}:{r1:.5f},asetpts=PTS-STARTPTS,aresample=48000,"
+                     f"apad=whole_dur={n / FPS:.5f},atrim=end={n / FPS:.5f}[a{k}]")
     parti.append("".join(f"[v{k}][a{k}]" for k in range(len(seg))) + f"concat=n={len(seg)}:v=1:a=1[v][a]")
     return ";".join(parti)
 
@@ -175,9 +266,9 @@ def main(argv: list[str] | None = None) -> int:
     with open(dosar / "bucati.json", encoding="utf-8") as f:
         bucati = json.load(f)
     with open(dosar / "duble.json", encoding="utf-8") as f:
-        duble = {d["dubla"]: d for d in json.load(f)}
+        toate = {d["dubla"]: d for d in json.load(f)}
     surse = proiect.clipuri(dosar)
-    for nume in sorted({duble[x["dubla"]]["clip"] for x in bucati}):
+    for nume in sorted({toate[x["dubla"]]["clip"] for x in bucati}):
         lat, inalt, rot = orientare(surse[nume])
         if (m := avertisment_orientare(nume, formate.e_orizontal(lat, inalt, rot), filmare)):
             print(m)
@@ -185,31 +276,59 @@ def main(argv: list[str] | None = None) -> int:
     extra = brand.filtru_fata(b)
     if extra:
         print(f"filtru pe față: {b['preferinte']['filtru_fata']}")
-    seg, cuvinte_reel, acc, rms_cache = [], [], 0.0, {}
-    for b in bucati:
-        d = duble[b["dubla"]]
-        with open(dosar / "transcripte" / f"{b['dubla']}.json", encoding="utf-8") as f:
+    lb = brand.limba(b)
+    plan, rms_cache, r10_cache, dur_cache = [], {}, {}, {}
+    for k, bc in enumerate(bucati):
+        d = toate[bc["dubla"]]
+        with open(dosar / "transcripte" / f"{bc['dubla']}.json", encoding="utf-8") as f:
             tr = json.load(f)
         ws, off = tr["words"], tr["decalaj"]
         if not ws:
-            raise SystemExit(f"Dubla {b['dubla']} nu are cuvinte transcrise.")
-        i0 = 0 if not b.get("de_la") else idx(ws, b["de_la"])
-        i1 = len(ws) - 1 if not b.get("pana_la") else idx(ws, b["pana_la"], i0)
+            raise SystemExit(f"Dubla {bc['dubla']} nu are cuvinte transcrise.")
+        i0 = 0 if not bc.get("de_la") else idx(ws, bc["de_la"])
+        i1 = len(ws) - 1 if not bc.get("pana_la") else idx(ws, bc["pana_la"], i0)
+        clip = d["clip"]
+        wav = dosar / "lucru" / f"{clip}.wav"
+        if clip not in rms_cache:
+            r = rms_db(dosar / "lucru" / f"{clip}.raw")
+            rms_cache[clip] = (r, prag(r))
+            dur_cache[clip] = duble.durata(wav)
         s, e = ws[i0]["start"] + off, ws[i1]["end"] + off
-        lim_s = ws[i0 - 1]["end"] + off + 0.02 if i0 > 0 else 0.0
-        lim_e = ws[i1 + 1]["start"] + off - 0.02 if i1 + 1 < len(ws) else 1e9
-        if d["clip"] not in rms_cache:
-            r = rms_db(dosar / "lucru" / f"{d['clip']}.raw")
-            rms_cache[d["clip"]] = (r, prag(r))
-        rms, prag_clip = rms_cache[d["clip"]]
-        a0, a1 = capete(rms, s, e, lim_s, lim_e, prag_clip)
-        a1 = cu_coada(a1, b.get("coada", 0.0), lim_e)
-        seg.append((d["clip"], a0, a1))
-        for w in ws[i0:i1 + 1]:
-            cuvinte_reel.append({"text": w["text"], "start": round(w["start"] + off - a0 + acc, 3),
-                                 "end": round(w["end"] + off - a0 + acc, 3), "type": "word"})
+        lim_s = ws[i0 - 1]["end"] + off + 0.02 if i0 > 0 else tr.get("de_la_timp", 0.0)
+        lim_e = ws[i1 + 1]["start"] + off - 0.02 if i1 + 1 < len(ws) else dur_cache[clip]
+        on, sf = capete_sunet(rms_cache[clip][0], s, e, lim_s, lim_e, rms_cache[clip][1])
+        plan.append({"b": bc, "clip": clip, "wav": wav, "on": on, "sf": sf, "lim_s": lim_s, "lim_e": lim_e, "off": off,
+                     "ws": ws[i0:i1 + 1], "strans": e_strans(bc, ws[i0]["text"], k)})
+
+    def ascultator(wav: Path):
+        def asculta(a: float, t: float) -> str:
+            try:
+                return duble.transcrie(wav, a, t, dosar / "lucru", lb)
+            except SystemExit:
+                return ""
+        return asculta
+
+    seg, cuvinte_reel, acc = [], [], 0.0
+    for k, p in enumerate(plan):
+        strans_in = p["strans"]
+        strans_out = k + 1 < len(plan) and plan[k + 1]["strans"]
+        r10 = None
+        if strans_in or strans_out:
+            if p["clip"] not in r10_cache:
+                r10_cache[p["clip"]] = rms10_db(p["wav"])
+            r10 = r10_cache[p["clip"]]
+        a0, a1, a_ramas = capete_bucata(p["on"], p["sf"], p["lim_s"], p["lim_e"], r10, strans_in, strans_out,
+                                        ascultator(p["wav"]), p["ws"][-1]["text"], p["ws"][0]["text"])
+        if strans_out and not a_ramas:
+            print(f"   {p['b']['dubla']}: sfârșitul strâns mânca ultimul cuvânt („{p['ws'][-1]['text']}”), rămâne cel normal")
+        a1 = cu_coada(a1, coada_bucatii(p["b"], k == len(plan) - 1), p["lim_e"])
+        seg.append((p["clip"], a0, a1))
+        for w in p["ws"]:
+            cuvinte_reel.append({"text": w["text"], "start": round(w["start"] + p["off"] - a0 + acc, 3),
+                                 "end": round(w["end"] + p["off"] - a0 + acc, 3), "type": "word"})
         acc += a1 - a0
-        print(f"{b['dubla']:14s} {a0:7.3f}-{a1:7.3f} ({a1 - a0:5.2f} s) | {' '.join(w['text'] for w in ws[i0:i1 + 1])}", flush=True)
+        semn = ("[" if strans_in else " ") + ("]" if a_ramas else " ")
+        print(f"{p['b']['dubla']:14s} {a0:7.3f}-{a1:7.3f} ({a1 - a0:5.2f} s) {semn} | {' '.join(w['text'] for w in p['ws'])}", flush=True)
     cmd = ["ffmpeg", "-v", "error", "-y"]
     s0s = []
     for c, a0, a1 in seg:

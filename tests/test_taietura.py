@@ -97,6 +97,107 @@ class TestCapete(unittest.TestCase):
         self.assertEqual(T.prag(self.rms(1.0, 2.0)), T.PRAG)
 
 
+def r10(coada=True):
+    """Ferestre de 10 ms: liniște, un „ș” slab (0,96–1,00 s), voce (1,00–2,00 s), coada stinsă a ultimului cuvânt (2,00–2,15 s)."""
+    r = [-80.0] * 400
+    for k in range(96, 100):
+        r[k] = -41.0
+    for k in range(100, 200):
+        r[k] = -20.0
+    if coada:
+        for k in range(200, 215):
+            r[k] = -36.0
+    return r
+
+
+class TestStrans(unittest.TestCase):
+    def test_bucata_care_incepe_cu_si_continua_fraza(self):
+        self.assertTrue(T.e_strans({}, "Și", 1))
+        self.assertTrue(T.e_strans({}, "și,", 2))
+        self.assertFalse(T.e_strans({}, "Sigur", 1))
+        self.assertFalse(T.e_strans({}, "Și", 0))                    # prima bucată nu are de ce să se lipească
+        self.assertFalse(T.e_strans({"strans": False}, "Și", 1))     # „Și acum partea importantă” deschide altă idee
+        self.assertTrue(T.e_strans({"strans": True}, "altul", 1))    # enumerare fără „și”
+
+    def test_debutul_strans_porneste_pe_sunet(self):
+        # măsurat pe ce a strâns Filip de mână: bucata începe chiar pe sunet (~−42 dB), fără marjă
+        self.assertAlmostEqual(T.debut_strans(r10(), 0.95, 2.0, 0.0), 0.96, places=2)
+        fara_s = r10()
+        for k in range(96, 100):
+            fara_s[k] = -80.0
+        self.assertAlmostEqual(T.debut_strans(fara_s, 0.98, 2.0, 0.0), 1.00, places=2)
+        self.assertAlmostEqual(T.debut_strans(r10(), 0.95, 2.0, 0.98), 0.98, places=2)   # nu intră în cuvântul dinainte
+
+    def test_sfarsitul_strans_taie_coada_stinsa(self):
+        self.assertAlmostEqual(T.sfarsit_strans(r10(), 1.0, 2.15), 2.04, places=2)   # ultima fereastră peste −32 dB, plus 0,04 s
+        self.assertAlmostEqual(T.sfarsit_strans(r10(), 1.0, 2.02), 2.02, places=2)   # niciodată după sfârșitul normal
+
+    def test_capetele_normale_si_stranse(self):
+        a0, a1, s_out = T.capete_bucata(0.95, 2.15, 0.0, 1e9, r10(), False, False)
+        self.assertAlmostEqual(a0, round(0.90 * T.FPS) / T.FPS)
+        self.assertAlmostEqual(a1, round(2.17 * T.FPS) / T.FPS)
+        self.assertFalse(s_out)
+        a0, a1, s_out = T.capete_bucata(0.95, 2.15, 0.0, 1e9, r10(), True, True)
+        self.assertAlmostEqual(a0, round(0.96 * T.FPS) / T.FPS)
+        self.assertAlmostEqual(a1, round(2.04 * T.FPS) / T.FPS)
+        self.assertTrue(s_out)
+
+    def test_plasa_de_siguranta_asculta_ultimul_cuvant(self):
+        # sfârșitul strâns mânca „-ri” din „videoclipuri” (1 oct): dacă Whisper nu mai aude același cuvânt, rămâne sfârșitul normal
+        _, a1, s_out = T.capete_bucata(0.95, 2.15, 0.0, 1e9, r10(), False, True, lambda a, b: "și videoclipu", "videoclipuri.")
+        self.assertFalse(s_out)
+        self.assertAlmostEqual(a1, round(2.17 * T.FPS) / T.FPS)
+        _, a1, s_out = T.capete_bucata(0.95, 2.15, 0.0, 1e9, r10(), False, True, lambda a, b: "Și Videoclipuri", "videoclipuri.")
+        self.assertTrue(s_out)
+        self.assertAlmostEqual(a1, round(2.04 * T.FPS) / T.FPS)
+        _, _, s_out = T.capete_bucata(0.95, 2.15, 0.0, 1e9, r10(), False, True, lambda a, b: "", "videoclipuri.")
+        self.assertFalse(s_out)   # Whisper n-a auzit nimic (sau lipsește): nu riscăm cuvântul
+
+    def test_inceputul_strans_nu_mananca_un_s_slab(self):
+        # demo-ul „Top 3”, „Și dacă vrei să înveți”: „ș” e la −50 dB, începutul strâns pornea pe „i” și se auzea „Dacă vrei”
+        r = r10()
+        for k in range(96, 100):
+            r[k] = -50.0
+        a0, _, _ = T.capete_bucata(0.95, 2.15, 0.0, 1e9, r, True, False, lambda a, b: "Dacă vrei", "vrei.", "Și")
+        self.assertAlmostEqual(a0, round(0.95 * T.FPS) / T.FPS)    # pe sunetul găsit la tăietura normală, tot fără pad
+        a0, _, _ = T.capete_bucata(0.95, 2.15, 0.0, 1e9, r, True, False, lambda a, b: "și dacă vrei", "vrei.", "Și")
+        self.assertAlmostEqual(a0, round(1.00 * T.FPS) / T.FPS)    # primul cuvânt se aude: rămâne strâns
+        a0, _, _ = T.capete_bucata(0.95, 2.15, 0.97, 1e9, r, True, False, lambda a, b: "Dacă vrei", "vrei.", "Și")
+        self.assertAlmostEqual(a0, round(0.97 * T.FPS) / T.FPS)    # nici așa nu intră în cuvântul dinainte
+
+    def test_finalul_ramane_pe_om(self):
+        # Filip, 2 oct: fără 0,25 s după ultimul cuvânt, cu gura închisă, videoul „pare tăiat”
+        self.assertEqual(T.coada_bucatii({}, True), 0.25)
+        self.assertEqual(T.coada_bucatii({}, False), 0.0)
+        self.assertEqual(T.coada_bucatii({"coada": 0}, True), 0)       # omul o poate opri
+        self.assertEqual(T.coada_bucatii({"coada": 0.1}, False), 0.1)
+
+    def test_fara_semne(self):
+        self.assertEqual(T.fara_semne("Și,"), "si")
+        self.assertEqual(T.fara_semne("videoclipuri."), "videoclipuri")
+
+    def test_capete_sunet_da_secundele_fara_pad(self):
+        rms = [(-20.0 if 1.0 <= k * T.PAS < 2.0 else -80.0) for k in range(int(4 / T.PAS))]
+        on, sf = T.capete_sunet(rms, 1.02, 1.98, 0.0, 1e9)
+        self.assertAlmostEqual(on, 1.0, delta=0.011)
+        self.assertAlmostEqual(sf, 2.0, delta=0.011)
+
+    def test_nivelul_pe_10_ms_din_wav(self):
+        # „ș” și „s” au energia peste 4 kHz: îmbinările strânse se măsoară pe wav-ul de 16 kHz, nu pe fișierul de 8 kHz
+        import array, math, tempfile, wave
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "ton.wav"
+            a = array.array("h", [0] * 16000 + [int(3276.8 * math.sin(2 * math.pi * 6000 * i / 16000)) for i in range(16000)])
+            if sys.byteorder == "big":
+                a.byteswap()
+            with wave.open(str(f), "wb") as w:
+                w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(a.tobytes())
+            r = T.rms10_db(f)
+        self.assertEqual(len(r), 199)
+        self.assertLess(r[50], -80)                       # liniște
+        self.assertAlmostEqual(r[150], -23.0, delta=0.5)  # un ton de 6 kHz la o zecime din maxim: −20 dB vârf, −23 dB RMS
+
+
 class TestFiltre(unittest.TestCase):
     def test_umple_9_16_fara_deformare_si_exact_pe_cadre(self):
         f = T.filtre([("IMG_1", 1.5, 3.0), ("IMG_2", 0.0, 1.0)], [0.5, 0.0])
@@ -125,6 +226,11 @@ class TestFiltre(unittest.TestCase):
         self.assertIn("verticală", T.avertisment_orientare("IMG_1", False, "16:9"))
         self.assertEqual(T.avertisment_orientare("IMG_1", False, "9:16"), "")
         self.assertEqual(T.avertisment_orientare("IMG_1", True, "16:9"), "")
+
+    def test_sunetul_fiecarei_bucati_are_exact_cadrele_ei(self):
+        # AAC lasă ~10 ms în plus la coada fiecărei bucăți; adunate, împing vocea față de imagine
+        f = T.filtre([("IMG_1", 1.5, 3.0)], [0.5])
+        self.assertIn("apad=whole_dur=1.50000,atrim=end=1.50000[a0]", f)
 
 
 if __name__ == "__main__":
