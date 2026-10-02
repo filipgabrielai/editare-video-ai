@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Planșele de dinainte de randare: cadre la intrarea, mijlocul și ieșirea fiecărui card, cu zonele acoperite de Instagram
-marcate cu roșu (sus tabul „Reels”, jos numele și descrierea, în dreapta butoanele). Nimic important nu are voie în roșu.
+"""Planșele de dinainte de randare: cadre la intrarea, mijlocul și ieșirea fiecărui card, cu zonele acoperite de aplicație
+marcate cu roșu (pe 9:16: tabul „Reels”, numele și descrierea, butoanele; pe 16:9: o margine de 5 %). Nimic important nu are
+voie în roșu.
 
     python3 procese/editare/planse.py proiecte/<slug>          → proiecte/<slug>/planse/foaie-01.jpg, ...
 """
@@ -12,13 +13,13 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from unelte import hyperframes, platforma  # noqa: E402
+from unelte import formate, hyperframes, platforma, proiect  # noqa: E402
 
-ZONE = [(0, 0, 1080, 260), (0, 1640, 1080, 280), (950, 1120, 130, 520)]   # x, y, lățime, înălțime
+MINIATURA = {"9:16": ("360:640", 6), "16:9": ("640:360", 3)}   # mărimea unui cadru pe foaie și câte încap pe un rând
 
 
-def filtru_zone() -> str:
-    return ",".join(f"drawbox=x={x}:y={y}:w={w}:h={h}:color=red@0.28:t=fill" for x, y, w, h in ZONE)
+def filtru_zone(fmt: str = formate.IMPLICIT) -> str:
+    return ",".join(f"drawbox=x={x}:y={y}:w={w}:h={h}:color=red@0.28:t=fill" for x, y, w, h in formate.ZONE[fmt])
 
 
 def momente(intervale: list[dict]) -> list[float]:
@@ -35,26 +36,28 @@ def main(argv: list[str] | None = None) -> int:
     dosar = Path(argv[0])
     with open(dosar / "intervale.json", encoding="utf-8") as f:
         intervale = json.load(f)
+    fmt = proiect.format_proiect(dosar)
+    scara, pe_foaie = MINIATURA[fmt]
     lucru = dosar / "lucru" / "planse"
     cadre = hyperframes.snapshot(dosar, momente(intervale), lucru)
     marcate = []
     for k, p in enumerate(cadre):
         m = lucru / f"m{k:03d}.jpg"
-        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(p), "-vf", f"{filtru_zone()},scale=360:640", str(m)], check=True)
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(p), "-vf", f"{filtru_zone(fmt)},scale={scara}", str(m)], check=True)
         marcate.append(m)
     iesire = dosar / "planse"
     iesire.mkdir(exist_ok=True)
     for f in iesire.glob("foaie-*.jpg"):
         f.unlink()
-    for i in range(0, len(marcate), 6):
-        lista = marcate[i:i + 6]
+    for i in range(0, len(marcate), pe_foaie):
+        lista = marcate[i:i + pe_foaie]
         intrari = []
         for m in lista:
             intrari += ["-i", str(m)]
         n = len(lista)
         graf = "".join(f"[{j}:v]" for j in range(n)) + f"hstack=inputs={n}[o]" if n > 1 else "[0:v]copy[o]"
         subprocess.run(["ffmpeg", "-v", "error", "-y", *intrari, "-filter_complex", graf, "-map", "[o]",
-                        str(iesire / f"foaie-{i // 6 + 1:02d}.jpg")], check=True)
+                        str(iesire / f"foaie-{i // pe_foaie + 1:02d}.jpg")], check=True)
     print(f"{len(marcate)} cadre în {len(list(iesire.glob('foaie-*.jpg')))} foi: {iesire}")
     return 0
 

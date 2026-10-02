@@ -76,6 +76,26 @@ class TestScenariu(unittest.TestCase):
         for bucata in ("carduri_y", "captions_y", "nu-exista", "hook", "4 rânduri"):
             self.assertIn(bucata, erori)
 
+    def test_scenariu_de_reel_pus_pe_orizontala(self):
+        sc = {"stil": "studio", "format": "16:9", "cadru": {"shift": 120, "captions_y": 1480},
+              "carduri": [{"id": "a", "ancora": "start", "kicker": "A", "randuri": [{"text": "un rând care pe orizontală nu mai încape"}]}]}
+        erori, avert = S.valideaza(sc, "16:9")
+        self.assertTrue(any("shift" in e for e in erori))            # pe 16:9 videoul nu se coboară
+        self.assertTrue(any("captions_y" in e for e in erori))       # 1480 e în afara cadrului de 1080
+        self.assertTrue(any("lung" in a for a in avert))             # 24 de caractere pe rând, nu 34
+
+    def test_cadrul_orizontal(self):
+        sc = {"stil": "studio", "format": "16:9", "cadru": {"carduri": "dreapta", "carduri_y": 160, "captions_y": 880},
+              "carduri": [{"id": "a", "ancora": "start", "kicker": "A", "randuri": [{"text": "scurt"}]}]}
+        self.assertEqual(S.valideaza(sc, "16:9"), ([], []))
+        sc["cadru"]["carduri"] = "sus"
+        self.assertTrue(any("stanga" in e for e in S.valideaza(sc, "16:9")[0]))
+
+    def test_format_necunoscut(self):
+        erori, _ = S.valideaza({"stil": "studio", "format": "4:5", "carduri": [{"id": "a", "ancora": "start", "kicker": "A",
+                                                                              "randuri": [{"text": "x"}]}]}, "4:5")
+        self.assertTrue(any("4:5" in e and "16:9" in e for e in erori))
+
 
 if __name__ == "__main__":
     unittest.main()

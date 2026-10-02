@@ -1,4 +1,4 @@
-"""Scenariul unui reel (scenariu.json), scris de Claude pentru fiecare video: titlul, cardurile, rândurile, chipurile și
+"""Scenariul unui video (scenariu.json), scris de Claude pentru fiecare video: titlul, cardurile, rândurile, chipurile și
 cuvintele pe care intră. Aici se citește, se validează și se leagă de transcript; mesajele de eroare spun exact ce nu se
 potrivește. Formatul e descris în docs/SCENARIU.md."""
 from __future__ import annotations
@@ -8,12 +8,11 @@ import re
 import unicodedata
 from pathlib import Path
 
-from unelte import platforma
+from unelte import formate, platforma
 
 STILURI = platforma.RADACINA / "stiluri"
 ICOANE: dict[str, str] = json.loads((STILURI / "icoane.json").read_text(encoding="utf-8"))
-ZONA_SUS, CAPTIONS_MAX = 262, 1480   # tabul „Reels” acoperă ~260 px sus; sub ~1580 stau numele și descrierea
-MAX_RANDURI, MAX_TEXT = 4, 34
+MAX_RANDURI = 4   # limitele care țin de format (zonele sigure, lungimea unui rând) sunt în unelte/formate.py
 
 
 def norm(s: str) -> list[str]:
@@ -92,18 +91,28 @@ def _text_simplu(t: str) -> str:
     return t.replace("**", "")
 
 
-def valideaza(sc: dict) -> tuple[list[str], list[str]]:
+def valideaza(sc: dict, fmt: str = formate.IMPLICIT) -> tuple[list[str], list[str]]:
     erori, avert = [], []
-    if not (STILURI / str(sc.get("stil", "")) / "reel.css").is_file():
-        erori.append(f"stilul „{sc.get('stil')}” nu există în stiluri/")
+    if fmt not in formate.FORMATE:
+        return [f"formatul „{fmt}” nu e cunoscut (sunt: {', '.join(formate.FORMATE)})"], []
+    if not (STILURI / str(sc.get("stil", "")) / formate.CSS[fmt]).is_file():
+        erori.append(f"stilul „{sc.get('stil')}” nu există în stiluri/" + ("" if fmt == "9:16" else f" pentru {fmt}"))
     cadru = sc.get("cadru", {})
+    stiute = formate.CADRU[fmt]
     for k, v in cadru.items():
-        if k not in ("shift", "carduri_y", "captions_y") or not isinstance(v, (int, float)):
-            erori.append(f"cadru.{k} nu e cunoscut sau nu e număr")
-    if cadru.get("carduri_y", ZONA_SUS) < ZONA_SUS:
-        erori.append(f"carduri_y = {cadru['carduri_y']}: sub {ZONA_SUS} px cardurile intră sub tabul „Reels” din Instagram")
-    if cadru.get("captions_y", CAPTIONS_MAX) > CAPTIONS_MAX:
-        erori.append(f"captions_y = {cadru['captions_y']}: peste {CAPTIONS_MAX} captions intră peste numele și descrierea din Instagram")
+        if k == "carduri" and k in stiute:
+            if v not in ("stanga", "dreapta"):
+                erori.append("cadru.carduri e „stanga” sau „dreapta”: partea liberă de lângă om")
+        elif k not in stiute or not isinstance(v, (int, float)):
+            erori.append(f"cadru.{k} nu e cunoscut sau nu e număr" + ("" if fmt == "9:16" else f" (pe {fmt}: {', '.join(stiute)})"))
+    y_min, y_max = formate.CARDURI_Y_MIN[fmt], formate.CAPTIONS_Y_MAX[fmt]
+    carduri_y, captions_y = cadru.get("carduri_y", y_min), cadru.get("captions_y", y_max)
+    if isinstance(carduri_y, (int, float)) and carduri_y < y_min:
+        erori.append(f"carduri_y = {carduri_y}: sub {y_min} px cardurile intră "
+                     + ("sub tabul „Reels” din Instagram" if fmt == "9:16" else "în marginea de sus a cadrului"))
+    if isinstance(captions_y, (int, float)) and captions_y > y_max:
+        erori.append(f"captions_y = {captions_y}: peste {y_max} captions intră "
+                     + ("peste numele și descrierea din Instagram" if fmt == "9:16" else "în marginea de jos a cadrului"))
     if len(sc.get("titlu", "")) > 30:
         avert.append("titlul are peste 30 de caractere; poate ieși din ecran")
     carduri = sc.get("carduri") or []
@@ -131,7 +140,7 @@ def valideaza(sc: dict) -> tuple[list[str], list[str]]:
                 erori.append(f"cardul „{cid}” are un rând fără text")
             if r.get("icoana") and r["icoana"] not in ICOANE:
                 erori.append(f"icoana „{r['icoana']}” nu există (sunt: {', '.join(sorted(ICOANE))})")
-            if len(_text_simplu(r.get("text", ""))) > MAX_TEXT:
+            if len(_text_simplu(r.get("text", ""))) > formate.MAX_TEXT[fmt]:
                 avert.append(f"cardul „{cid}”: rândul „{r['text']}” e lung și poate ieși din card; verifică pe planșă")
         if "brand" in c and not isinstance(c["brand"], bool):
             erori.append(f"cardul „{cid}”: brand e true sau false")

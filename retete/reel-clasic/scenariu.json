@@ -1,0 +1,14 @@
+{
+ "titlu": "Titlul reelului",
+ "stil": "studio",
+ "cadru": {"shift": 120, "carduri_y": 370, "captions_y": 1480},
+ "corecturi": {"despre ei": "despre AI"},
+ "carduri": [
+  {"id": "hook", "ancora": "start", "kicker": "IDEEA REELULUI",
+   "randuri": [{"text": "promisiunea, cu **cuvântul important**", "icoana": "zap"}]},
+  {"id": "pasi", "ancora": "start", "kicker": "PAȘII",
+   "randuri": [{"text": "primul **pas**", "icoana": "check"}, {"text": "al doilea **pas**", "icoana": "check", "ancora": "start"}]},
+  {"id": "final", "ancora": "start", "kicker": "NUMELE TĂU", "brand": true,
+   "randuri": [{"text": "urmărește-mă pentru **mai multe**", "icoana": "user"}]}
+ ]
+}

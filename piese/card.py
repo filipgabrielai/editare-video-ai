@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from piese.comun import Context, Fragment
 from procese.editare import scenariu as S
+from unelte import formate
 
-INALTIME_RAND = {False: 84, True: 66}   # ca .card .row și .card.compact .row din stil
+INALTIME_RAND = formate.RAND["9:16"]   # pe reel; pe alt format, formate.RAND (ca .card .row și .card.compact .row din stil)
 
 
 def construieste(ctx: Context) -> Fragment:
@@ -14,6 +15,7 @@ def construieste(ctx: Context) -> Fragment:
     beats: list[tuple[float, str]] = []
     intervale: list[dict] = []
     rgb = ctx.st["accent_rgb"]
+    xp = -50 if ctx.format == "9:16" else 0     # pe 9:16 cardul e centrat deasupra omului; pe 16:9 stă lângă el
     carduri = ctx.sc["carduri"]
     intrari = []
     for c in carduri:
@@ -42,8 +44,8 @@ def construieste(ctx: Context) -> Fragment:
         cls = "card compact" if c.get("compact") else "card"
         marca = ctx.logo_brand if c.get("brand") else ""   # logoul omului, pe cardul de final
         html.append(f'<div class="{cls}" id="{cid}"><div class="k">{marca}{S.esc(c["kicker"])}</div>{"".join(corp)}</div>')
-        js.append(f'tl.fromTo("#{cid}", {{xPercent:-50, autoAlpha:0, y:-26, scale:0.94, filter:"blur(10px)"}}, '
-                  f'{{xPercent:-50, autoAlpha:1, y:0, scale:1, filter:"blur(0px)", duration:0.5, ease:"back.out(1.3)"}}, {t0:.3f});')
+        js.append(f'tl.fromTo("#{cid}", {{xPercent:{xp}, autoAlpha:0, y:-26, scale:0.94, filter:"blur(10px)"}}, '
+                  f'{{xPercent:{xp}, autoAlpha:1, y:0, scale:1, filter:"blur(0px)", duration:0.5, ease:"back.out(1.3)"}}, {t0:.3f});')
         ctx.sunete.adauga("card", t0, 0.6 if k == 0 else None)
         if k + 1 < len(carduri):
             js.append(f'tl.to("#{cid}", {{autoAlpha:0, y:-30, scale:0.96, duration:0.28, ease:"power1.in"}}, {t1:.3f});')
@@ -55,7 +57,7 @@ def construieste(ctx: Context) -> Fragment:
         for r_i, r in enumerate(c.get("randuri", [])):
             if r_i > 0 and r.get("ancora"):
                 tr = max(t0 + 0.35, ctx.ancora(r["ancora"]) - 0.03)
-                h = INALTIME_RAND[bool(c.get("compact"))]   # cât primul rând, ca distanța dintre rânduri să fie egală
+                h = formate.RAND[ctx.format][bool(c.get("compact"))]   # cât primul rând, ca distanța dintre rânduri să fie egală
                 js.append(f'tl.fromTo("#{cid}-r{r_i}", {{height:0, minHeight:0, autoAlpha:0, x:-18}}, '
                           f'{{height:{h}, minHeight:{h}, autoAlpha:1, x:0, duration:0.32, ease:"power2.out"}}, {tr:.3f});')
                 ctx.sunete.adauga("pop", tr)

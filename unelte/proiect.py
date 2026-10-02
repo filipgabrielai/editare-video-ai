@@ -8,7 +8,7 @@ import shutil
 import unicodedata
 from pathlib import Path
 
-from unelte import platforma
+from unelte import formate, platforma
 
 PROIECTE = platforma.RADACINA / "proiecte"
 VIDEO_EXT = (".mov", ".mp4", ".m4v", ".mkv")
@@ -63,3 +63,17 @@ def creeaza(sursa: Path, nume: str | None = None) -> Path:
 def clipuri(dosar: Path) -> dict[str, Path]:
     with open(dosar / "sursa.json", encoding="utf-8") as f:
         return {k: Path(v) for k, v in json.load(f)["clipuri"].items()}
+
+
+def format_proiect(dosar: Path, sc: dict | None = None) -> str:
+    """Pânza videoului: "format" din scenariu, altfel filmarea de la tăietură, altfel 9:16 (proiectele făcute înainte)."""
+    filmare = formate.IMPLICIT
+    if (dosar / "taieturi.json").is_file():
+        filmare = json.loads((dosar / "taieturi.json").read_text(encoding="utf-8")).get("filmare", formate.IMPLICIT)
+    if sc is None and (dosar / "scenariu.json").is_file():
+        sc = json.loads((dosar / "scenariu.json").read_text(encoding="utf-8"))
+    fmt = (sc or {}).get("format", filmare)
+    if fmt != filmare:
+        raise SystemExit(f"Scenariul cere {fmt}, dar tăietura e {filmare}. Refă tăietura cu --filmare {fmt}. "
+                         "(Filmarea pusă în panouri pe altă pânză vine într-o versiune următoare.)")
+    return fmt

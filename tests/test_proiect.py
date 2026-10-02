@@ -57,6 +57,19 @@ class TestProiect(unittest.TestCase):
             self.assertFalse((dosar / "transcripte").exists())
             self.assertFalse((dosar / "duble.json").exists())
 
+    def test_formatul_proiectului(self):
+        with tempfile.TemporaryDirectory() as d:
+            dosar = Path(d)
+            self.assertEqual(proiect.format_proiect(dosar, {"carduri": []}), "9:16")      # proiect făcut înainte: fără nimic scris
+            (dosar / "taieturi.json").write_text(json.dumps({"taieturi": [], "bucati": []}), encoding="utf-8")
+            self.assertEqual(proiect.format_proiect(dosar, {}), "9:16")                   # taieturi.json din v1, fără „filmare”
+            (dosar / "taieturi.json").write_text(json.dumps({"taieturi": [], "bucati": [], "filmare": "16:9"}), encoding="utf-8")
+            self.assertEqual(proiect.format_proiect(dosar, {}), "16:9")                   # scenariul nu spune: formatul filmării
+            self.assertEqual(proiect.format_proiect(dosar, {"format": "16:9"}), "16:9")
+            with self.assertRaises(SystemExit) as e:
+                proiect.format_proiect(dosar, {"format": "9:16"})
+            self.assertIn("--filmare 9:16", str(e.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -132,6 +132,27 @@ class TestCompozitie(unittest.TestCase):
         self.assertIn('data-duration="26.5166"', p)
         self.assertNotIn('data-duration="26.517"', p)
 
+    def test_pagina_orizontala(self):
+        sc = {"stil": "studio", "format": "16:9", "cadru": {"carduri": "dreapta"},
+              "carduri": [{"id": "a", "ancora": "start", "kicker": "A", "randuri": [{"text": "unu"}, {"text": "doi", "ancora": "productiv"}]}]}
+        plan = C.planifica(sc, self.ws, [], 6.0, S.stil("studio"), fmt="16:9")
+        js = "\n".join(plan["js"])
+        self.assertIn("xPercent:0", js)                 # cardul stă lângă om, nu centrat deasupra lui
+        self.assertNotIn("xPercent:-50", js)
+        self.assertIn("height:72, minHeight:72", js)
+        p = C.pagina(sc, plan, [], [], 6.0, "16:9")
+        self.assertIn('data-width="1920" data-height="1080"', p)
+        self.assertIn("--card-st:auto;--card-dr:96px", p)
+        self.assertIn("--captions-y:880px", p)
+        with tempfile.TemporaryDirectory() as d:
+            C.pregateste_assets(Path(d), "studio", None, "16:9")
+            self.assertIn("1920px", (Path(d) / "assets" / "stil.css").read_text(encoding="utf-8"))
+
+    def test_subtitrarile_orizontale_pot_fi_mai_late(self):
+        ws = [{"text": t, "start": k * 0.5, "end": k * 0.5 + 0.45} for k, t in enumerate(["îmbunătățește", "videoclipurile", "automat"])]
+        self.assertEqual([len(g) for g in C.grupuri(ws, [], max_car=22)], [1, 2])
+        self.assertEqual([len(g) for g in C.grupuri(ws, [], max_car=34)], [2, 1])   # „îmbunătățește videoclipurile” are 28
+
     def test_logourile_in_locul_iconitei(self):
         sc = {"stil": "studio", "logo_inversat": ["openai"], "carduri": [{"id": "l1", "ancora": "start", "kicker": "LOCUL 1",
               "randuri": [{"text": "**Claude Code** și **Codex**", "logo": ["claude", "openai"]}]}]}

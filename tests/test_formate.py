@@ -28,6 +28,13 @@ class TestFormate(unittest.TestCase):
             for x, y, lat, inalt in formate.ZONE[f]:
                 self.assertTrue(0 <= x and x + lat <= w and 0 <= y and y + inalt <= h, (f, x, y, lat, inalt))
 
+    def test_fiecare_format_are_tot_ce_ii_trebuie(self):
+        for f in formate.FORMATE:
+            for tabel in (formate.CSS, formate.CADRU, formate.CARDURI_Y_CU_TITLU, formate.COMPACT_Y, formate.CARDURI_Y_MIN,
+                          formate.CAPTIONS_Y_MAX, formate.MAX_TEXT, formate.MAX_CAR, formate.RAND):
+                self.assertIn(f, tabel)
+            self.assertTrue((Path(__file__).resolve().parents[1] / "stiluri" / "studio" / formate.CSS[f]).is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

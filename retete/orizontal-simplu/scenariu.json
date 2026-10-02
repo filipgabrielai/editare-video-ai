@@ -1,0 +1,15 @@
+{
+ "titlu": "Titlul videoului",
+ "stil": "studio",
+ "format": "16:9",
+ "cadru": {"carduri": "stanga", "carduri_y": 200, "captions_y": 880},
+ "corecturi": {"despre ei": "despre AI"},
+ "carduri": [
+  {"id": "hook", "ancora": "start", "kicker": "IDEEA",
+   "randuri": [{"text": "promisiunea, **scurt**", "icoana": "zap"}]},
+  {"id": "pasi", "ancora": "start", "kicker": "PAȘII",
+   "randuri": [{"text": "primul **pas**", "icoana": "check"}, {"text": "al doilea **pas**", "icoana": "check", "ancora": "start"}]},
+  {"id": "final", "ancora": "start", "kicker": "NUMELE TĂU", "brand": true,
+   "randuri": [{"text": "**urmărește-mă**", "icoana": "user"}]}
+ ]
+}

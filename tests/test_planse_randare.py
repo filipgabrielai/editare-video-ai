@@ -14,6 +14,11 @@ class TestPlanse(unittest.TestCase):
         self.assertIn("y=1640", f)
         self.assertIn("x=950:y=1120", f)
 
+    def test_zonele_pe_orizontala(self):
+        f = planse.filtru_zone("16:9")
+        self.assertIn("drawbox=x=0:y=1026:w=1920:h=54", f)
+        self.assertNotIn("1640", f)
+
     def test_momente_intrare_mijloc_iesire(self):
         m = planse.momente([{"id": "a", "intra": 0.05, "iese": 4.0}, {"id": "b", "intra": 4.08, "iese": 5.0}])
         self.assertEqual(m, [0.65, 2.02, 3.7, 4.54, 4.68, 4.7])   # (0,05+4)/2 = 2,025 e în binar 2,02499…

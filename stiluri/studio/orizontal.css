@@ -1,0 +1,45 @@
+/* Studio, video orizontal 16:9: omul pe tot cadrul, cardul lângă el (stânga sau dreapta), subtitrările pe piept.
+   Pozițiile vin din scenariu (--carduri-y, --captions-y, --card-st, --card-dr), puse pe #reel de compozitie.py. */
+:root{--fundal:#020206;--text:#ffffff;--text-dim:#94a3b8;--accent:#38bdf8;--accent-2:#2563eb;--accent-rgb:56,189,248;
+  --font-display:'Geist','Helvetica Neue',Arial,sans-serif;--font-mono:'Geist Mono',ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:var(--fundal)}
+#reel{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--fundal);font-family:var(--font-display);color:var(--text)}
+.clip{position:absolute;inset:0;width:1920px;height:1080px}
+#fund{background:var(--fundal);z-index:0}
+#stage{position:absolute;inset:0;overflow:hidden;z-index:1;transform-origin:50% 50%;will-change:transform}
+#stage video{position:absolute;left:0;top:0;width:1920px;height:1080px;object-fit:cover;display:block}
+#umbra,#umbra2{position:absolute;left:0;top:0;width:0;height:0;opacity:0;visibility:hidden}
+#titlu{position:absolute;left:96px;top:64px;z-index:22;opacity:0;white-space:nowrap;
+  font-size:40px;font-weight:700;letter-spacing:-0.02em;padding:8px 22px;border-radius:16px;
+  background:rgba(4,8,16,.72);border:1.5px solid rgba(var(--accent-rgb),.35)}
+.card{position:absolute;left:var(--card-st);right:var(--card-dr);top:var(--carduri-y);z-index:20;opacity:0;max-width:640px;white-space:nowrap;
+  padding:20px 30px 22px;border-radius:28px;background:rgba(4,8,16,.86);border:1.5px solid rgba(var(--accent-rgb),.45);
+  box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 60px rgba(var(--accent-rgb),.22),inset 0 1px 0 rgba(255,255,255,.1)}
+.card.compact{top:var(--compact-y);padding:12px 24px 14px}
+.card .k{font-family:var(--font-mono);font-size:22px;letter-spacing:.2em;color:var(--accent);margin-bottom:6px;font-weight:600}
+.card .k .kl{height:28px;width:auto;max-width:130px;object-fit:contain;margin-right:12px;vertical-align:-7px;border-radius:6px}
+.card .row{display:flex;align-items:center;gap:16px;min-height:72px}
+.card.compact .row{min-height:60px;gap:12px}
+.card .row.ascuns{height:0;min-height:0;overflow:hidden;opacity:0}
+.card .et{font-size:36px;font-weight:700;letter-spacing:-0.02em;line-height:1.05;white-space:nowrap}
+.card.compact .et{font-size:30px}
+.card .et b{color:var(--accent);font-weight:700}
+.ic{display:inline-flex;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  align-items:center;justify-content:center;flex:0 0 auto}
+.ic svg{width:25px;height:25px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.lgs{display:inline-flex;gap:8px;flex:0 0 auto}
+.lg{width:44px;height:44px;border-radius:11px;object-fit:contain;display:block;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+.lg.inv{filter:invert(1)}
+.card.compact .lg{width:38px;height:38px;border-radius:9px}
+.chips{gap:12px}
+.chip{display:inline-flex;align-items:center;padding:10px 18px;border-radius:20px;background:rgba(148,163,184,.08);
+  border:1px solid rgba(148,163,184,.3);color:#94a3b8;opacity:0}
+.chip span{font-size:28px;font-weight:700;white-space:nowrap}
+.card.compact .chip{padding:8px 14px}
+.card.compact .chip span{font-size:26px}
+.cifra{font-family:var(--font-mono);font-size:88px;font-weight:600;letter-spacing:-0.04em;color:var(--accent);opacity:0;line-height:1}
+#captii{position:absolute;left:0;right:0;top:var(--captions-y);z-index:30;height:120px}
+.cap{position:absolute;left:50%;top:0;display:flex;gap:22px;align-items:baseline;padding:12px 30px;border-radius:22px;
+  background:rgba(2,2,6,.6);opacity:0;white-space:nowrap}
+.cw{display:inline-block;font-size:52px;font-weight:700;letter-spacing:-0.015em;color:#fff;text-shadow:0 3px 18px rgba(0,0,0,.7);transform-origin:50% 70%}

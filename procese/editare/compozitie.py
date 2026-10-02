@@ -21,7 +21,7 @@ from piese.card import INALTIME_RAND  # noqa: E402,F401
 from piese.comun import FPS, MIN_PAUZA, ROT, VOL, Context, Sunete  # noqa: E402,F401
 from piese.subtitrari import MAX_CAR, captions, grupuri  # noqa: E402,F401
 from procese.editare import scenariu as S  # noqa: E402
-from unelte import brand, formate, hyperframes, platforma  # noqa: E402
+from unelte import brand, formate, hyperframes, platforma, proiect  # noqa: E402
 
 
 def logouri_proiect(dosar: Path) -> dict[str, str]:
@@ -65,9 +65,15 @@ def mesaj_lint(ok: bool, iesire: str) -> str:
     return iesire.splitlines()[-1] if ok else iesire
 
 
-def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata: float) -> str:
-    c = {"shift": 120, "carduri_y": 370 if sc.get("titlu") else 280, "captions_y": 1480, **sc.get("cadru", {})}
-    compact_y = 340 if sc.get("titlu") else S.ZONA_SUS   # cu titlu (262–330 px), cardul compact stă sub el
+def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata: float, fmt: str = formate.IMPLICIT) -> str:
+    w, h = formate.dimensiuni(fmt)
+    c = {**formate.CADRU[fmt], **({"carduri_y": formate.CARDURI_Y_CU_TITLU[fmt]} if sc.get("titlu") else {}), **sc.get("cadru", {})}
+    compact_y = formate.COMPACT_Y[fmt][1 if sc.get("titlu") else 0]   # cu titlu, cardul compact stă sub el
+    if fmt == "9:16":
+        pozitii = f"--shift:{c['shift']}px;--carduri-y:{c['carduri_y']}px;--captions-y:{c['captions_y']}px;--compact-y:{compact_y}px"
+    else:   # pe orizontală cardul stă lângă om, pe partea liberă a cadrului
+        st, dr = (f"{formate.MARGINE_CARD}px", "auto") if c["carduri"] == "stanga" else ("auto", f"{formate.MARGINE_CARD}px")
+        pozitii = f"--carduri-y:{c['carduri_y']}px;--captions-y:{c['captions_y']}px;--compact-y:{compact_y}px;--card-st:{st};--card-dr:{dr}"
     ds = dur_str(durata)
     sfx = "\n".join(f'  <audio id="sfx-{i}" data-start="{t:.3f}" data-duration="{d:.3f}" data-track-index="{20 + i}" '
                     f'src="assets/sunete/{n}.wav" data-volume="{v}"></audio>' for i, (t, n, v, d) in enumerate(sorted(plan["sfx"])))
@@ -79,8 +85,8 @@ def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata:
 <link rel="stylesheet" href="assets/stil.css">
 <link rel="stylesheet" href="assets/brand.css">
 </head><body>
-<div id="reel" data-composition-id="reel" data-start="0" data-duration="{ds}" data-width="1080" data-height="1920"
-  style="--shift:{c['shift']}px;--carduri-y:{c['carduri_y']}px;--captions-y:{c['captions_y']}px;--compact-y:{compact_y}px">
+<div id="reel" data-composition-id="reel" data-start="0" data-duration="{ds}" data-width="{w}" data-height="{h}"
+  style="{pozitii}">
   <div id="fund" class="clip" data-start="0" data-duration="{ds}" data-track-index="0"></div>
   <div id="stage">
     <video id="vid" class="clip" data-start="0" data-duration="{ds}" data-track-index="1" src="taiat.mp4" muted playsinline></video>
@@ -107,14 +113,14 @@ def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata:
 """
 
 
-def pregateste_assets(dosar: Path, stil: str, b: dict | None = None) -> None:
+def pregateste_assets(dosar: Path, stil: str, b: dict | None = None, fmt: str = formate.IMPLICIT) -> None:
     b = b or brand.IMPLICIT
     rad = platforma.RADACINA
     a = dosar / "assets"
     (a / "fonturi").mkdir(parents=True, exist_ok=True)
     (a / "sunete").mkdir(exist_ok=True)
     shutil.copy(rad / "node_modules" / "gsap" / "dist" / "gsap.min.js", a / "gsap.min.js")
-    shutil.copy(rad / "stiluri" / stil / "reel.css", a / "stil.css")
+    shutil.copy(rad / "stiluri" / stil / formate.CSS[fmt], a / "stil.css")
     for f in (rad / "fonturi").glob("*.woff2"):
         shutil.copy(f, a / "fonturi" / f.name)
     shutil.copy(rad / "fonturi" / "fonturi.css", a / "fonturi" / "fonturi.css")
@@ -159,7 +165,8 @@ def main(argv: list[str] | None = None) -> int:
     dosar = Path(argv[0])
     with open(dosar / "scenariu.json", encoding="utf-8") as f:
         sc = json.load(f)
-    erori, avert = S.valideaza(sc)
+    fmt = proiect.format_proiect(dosar, sc)
+    erori, avert = S.valideaza(sc, fmt)
     logouri = logouri_proiect(dosar)
     erori += logouri_lipsa(sc, logouri)
     for x in avert:
@@ -173,10 +180,10 @@ def main(argv: list[str] | None = None) -> int:
     durata = durata_video(dosar / "taiat.mp4")
     b = brand.incarca()
     st = brand.stil(S.stil(sc["stil"]), b)
-    plan = planifica(sc, ws, cuts, durata, st, logouri, brand.logo_html(b))
-    cap_html, cap_js = aplica_preferinte(plan, captions(grupuri(ws, cuts), durata, st["accent"]), b)
-    pregateste_assets(dosar, sc["stil"], b)
-    (dosar / "index.html").write_text(pagina(sc, plan, cap_html, cap_js, durata), encoding="utf-8")
+    plan = planifica(sc, ws, cuts, durata, st, logouri, brand.logo_html(b), fmt)
+    cap_html, cap_js = aplica_preferinte(plan, captions(grupuri(ws, cuts, max_car=formate.MAX_CAR[fmt]), durata, st["accent"]), b)
+    pregateste_assets(dosar, sc["stil"], b, fmt)
+    (dosar / "index.html").write_text(pagina(sc, plan, cap_html, cap_js, durata, fmt), encoding="utf-8")
     with open(dosar / "intervale.json", "w", encoding="utf-8") as f:
         json.dump(plan["intervale"], f, indent=1)
     beats = ["# Beat-uri", "", "| t | ce apare |", "|---|---|"] + [f"| {t:.2f} | {x} |" for t, x in plan["beats"]]
