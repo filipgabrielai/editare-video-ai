@@ -203,7 +203,8 @@ def capete_bucata(on: float, sf: float, lim_s: float, lim_e: float, r10: list[fl
     Sfârșitul se alege de la cel mai strâns la cel mai sigur: strâns (dacă bucata următoare continuă fraza), cu coada limitată
     (sf), cu toată coada (sf_lung). Un sfârșit care scurtează bucata se ascultă (asculta(a, b) întoarce textul): sfârșitul
     strâns mânca „-ri” din „videoclipuri”, iar coada limitată mânca „-uri” din „prompturi”. Rămâne doar dacă ultimul cuvânt
-    se aude ca în transcript sau ca în bucata cu toată coada (Whisper aude „clode” și acolo: nu s-a pierdut nimic).
+    se aude ca în transcript, sau ca în bucata cu toată coada și terminat la fel ca în transcript (Whisper aude „clode” pentru
+    „Claude” și acolo: nu s-a pierdut nimic; „prompt” pentru „prompturi” nu dovedește nimic, deci rămâne toată coada).
     Începutul strâns sărea peste un „ș” slab („Și dacă vrei” se auzea „Dacă vrei”): dacă primul cuvânt nu se mai aude, bucata
     pornește pe sunetul găsit de tăietura normală, tot fără pad. Întoarce și dacă sfârșitul a rămas strâns."""
     def cadru(t: float) -> float:
@@ -221,10 +222,10 @@ def capete_bucata(on: float, sf: float, lim_s: float, lim_e: float, r10: list[fl
     for a1, strans in variante[:-1]:
         text = asculta(a0, a1)
         auzit = text if auzit is None else auzit
-        u = _capat(text, -1)
-        if u and u != fara_semne(ultim):
+        u, asteptat = _capat(text, -1), fara_semne(ultim)
+        if u and u != asteptat:
             martor = _capat(asculta(a0, sigur), -1) if martor is None else martor
-        if u and u in (fara_semne(ultim), martor):
+        if u and (u == asteptat or (u == martor and u[-2:] == asteptat[-2:])):
             ales = (a1, strans)
             break
     if strans_in and prim:
@@ -232,6 +233,34 @@ def capete_bucata(on: float, sf: float, lim_s: float, lim_e: float, r10: list[fl
         if _capat(auzit, 0) != fara_semne(prim):
             a0 = round(max(on, lim_s) * FPS) / FPS
     return a0, ales[0], ales[1]
+
+
+class Ascultari:
+    """Ce a auzit Whisper la capetele bucăților, ținut minte în lucru/ascultari.json. Fiecare ascultare e un whisper-cli pornit
+    de la zero (modelul de 1,6 GB): la re-tăiere, capetele bucăților neschimbate revin exact la fel și nu se mai ascultă. Ce
+    n-a mers (text gol) nu se ține minte."""
+
+    def __init__(self, fisier: Path, model: str, limba: str) -> None:
+        self.fisier, self.prefix = fisier, f"{model}|{limba}"
+        self.noi = self.din_cache = 0
+        try:
+            self.date = json.loads(fisier.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            self.date = {}
+
+    def asculta(self, clip: str, a: float, b: float, transcrie) -> str:
+        cheie = f"{self.prefix}|{clip}|{a:.3f}|{b:.3f}"
+        if cheie in self.date:
+            self.din_cache += 1
+            return self.date[cheie]
+        self.noi += 1
+        text = transcrie(a, b)
+        if text:
+            self.date[cheie] = text
+        return text
+
+    def salveaza(self) -> None:
+        self.fisier.write_text(json.dumps(self.date, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
 def coada_bucatii(b: dict, ultima: bool) -> float:
@@ -334,13 +363,15 @@ def main(argv: list[str] | None = None) -> int:
         plan.append({"b": bc, "clip": clip, "wav": wav, "on": on, "sf": sf, "sf_lung": sf_lung, "lim_s": lim_s, "lim_e": lim_e, "off": off,
                      "ws": ws[i0:i1 + 1], "strans": e_strans(bc, ws[i0]["text"], k)})
 
-    def ascultator(wav: Path):
-        def asculta(a: float, t: float) -> str:
+    ascultari = Ascultari(dosar / "lucru" / "ascultari.json", platforma.model_whisper().name, lb)
+
+    def ascultator(clip: str, wav: Path):
+        def transcrie(a: float, t: float) -> str:
             try:
                 return duble.transcrie(wav, a, t, dosar / "lucru", lb)
             except SystemExit:
                 return ""
-        return asculta
+        return lambda a, t: ascultari.asculta(clip, a, t, transcrie)
 
     seg, cuvinte_reel, acc = [], [], 0.0
     for k, p in enumerate(plan):
@@ -352,7 +383,7 @@ def main(argv: list[str] | None = None) -> int:
                 r10_cache[p["clip"]] = rms10_db(p["wav"])
             r10 = r10_cache[p["clip"]]
         a0, a1, a_ramas = capete_bucata(p["on"], p["sf"], p["lim_s"], p["lim_e"], r10, strans_in, strans_out,
-                                        ascultator(p["wav"]), p["ws"][-1]["text"], p["ws"][0]["text"], p["sf_lung"])
+                                        ascultator(p["clip"], p["wav"]), p["ws"][-1]["text"], p["ws"][0]["text"], p["sf_lung"])
         if strans_out and not a_ramas:
             print(f"   {p['b']['dubla']}: sfârșitul strâns mânca ultimul cuvânt („{p['ws'][-1]['text']}”), rămâne cel normal")
         a1 = cu_coada(a1, coada_bucatii(p["b"], k == len(plan) - 1), p["lim_e"])
@@ -363,6 +394,9 @@ def main(argv: list[str] | None = None) -> int:
         acc += a1 - a0
         semn = ("[" if strans_in else " ") + ("]" if a_ramas else " ")
         print(f"{p['b']['dubla']:14s} {a0:7.3f}-{a1:7.3f} ({a1 - a0:5.2f} s) {semn} | {' '.join(w['text'] for w in p['ws'])}", flush=True)
+    ascultari.salveaza()
+    if ascultari.noi or ascultari.din_cache:
+        print(f"capete ascultate cu Whisper: {ascultari.noi} (alte {ascultari.din_cache} știute de la tăietura dinainte)", flush=True)
     cmd = ["ffmpeg", "-v", "error", "-y"]
     s0s = []
     for c, a0, a1 in seg:

@@ -219,6 +219,38 @@ class TestStrans(unittest.TestCase):
         self.assertAlmostEqual(scurt, 2.08, delta=0.011)
         self.assertGreater(lung, 2.15)
 
+    def test_martorul_nu_scuza_o_silaba_pierduta(self):
+        # dacă Whisper aude „prompt” și pe bucata cu toată coada, asta nu dovedește că „-uri” nu s-a pierdut: capătul scurt
+        # rămâne doar când ce se aude se termină ca în transcript („clode” / „Claude”), altfel rămâne toată coada
+        _, a1, _ = T.capete_bucata(0.95, 2.08, 0.0, 1e9, None, False, False, lambda a, b: "doar din prompt", "prompturi.", "doar", 2.25)
+        self.assertAlmostEqual(a1, round(2.28 * T.FPS) / T.FPS)
+
+    def test_ce_s_a_ascultat_o_data_nu_se_mai_asculta(self):
+        # fiecare ascultare e un whisper-cli pornit de la zero (modelul de 1,6 GB); la re-tăiere capetele neschimbate revin la fel
+        import tempfile
+        apeluri = []
+
+        def transcrie(a, b):
+            apeluri.append((a, b))
+            return "" if b > 9 else f"text {a} {b}"
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "ascultari.json"
+            asc = T.Ascultari(f, "ggml-large-v3-turbo.bin", "ro")
+            self.assertEqual(asc.asculta("IMG_1", 1.0, 2.5, transcrie), "text 1.0 2.5")
+            self.assertEqual(asc.asculta("IMG_1", 1.0, 2.5, transcrie), "text 1.0 2.5")
+            self.assertEqual(asc.asculta("IMG_1", 1.0, 2.6, transcrie), "text 1.0 2.6")     # alt capăt: se ascultă
+            self.assertEqual(asc.asculta("IMG_1", 1.0, 9.5, transcrie), "")
+            self.assertEqual(asc.asculta("IMG_1", 1.0, 9.5, transcrie), "")                # Whisper n-a mers: nu se ține minte
+            self.assertEqual(len(apeluri), 4)
+            self.assertEqual((asc.noi, asc.din_cache), (4, 1))
+            asc.salveaza()
+            alta = T.Ascultari(f, "ggml-large-v3-turbo.bin", "ro")                        # la următoarea tăietură
+            self.assertEqual(alta.asculta("IMG_1", 1.0, 2.5, transcrie), "text 1.0 2.5")
+            self.assertEqual(len(apeluri), 4)
+            mic = T.Ascultari(f, "ggml-tiny.bin", "ro")                                   # alt model aude altceva
+            mic.asculta("IMG_1", 1.0, 2.5, transcrie)
+            self.assertEqual(len(apeluri), 5)
+
     def test_finalul_ramane_pe_om(self):
         # Filip, 2 oct: fără 0,25 s după ultimul cuvânt, cu gura închisă, videoul „pare tăiat”
         self.assertEqual(T.coada_bucatii({}, True), 0.25)

@@ -1,7 +1,8 @@
 # Rețetele
 
 O rețetă e un scenariu de la care pornești: Claude o copiază în `proiecte/<slug>/scenariu.json` și o adaptează la ce ai spus în
-video (ancorele „start” devin cuvinte din transcript, textele devin ale tale).
+video: ancorele scrise cu MAJUSCULE devin cuvinte din transcript, textele devin ale tale. Doar primul card pornește de la
+„start”.
 
 | Rețeta | Pentru ce | Format | Tăietura |
 |---|---|---|---|

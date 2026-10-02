@@ -119,6 +119,10 @@ def valideaza(sc: dict, fmt: str = formate.IMPLICIT) -> tuple[list[str], list[st
     if not carduri:
         erori.append("scenariul nu are carduri")
     vazute = set()
+    for c in carduri[1:]:
+        if c.get("ancora") == "start":   # ar intra odată cu primul, iar primul ar ieși înainte de secunda zero
+            erori.append(f"cardul „{c.get('id', '')}” are ancora „start”: doar primul card pornește de la început; "
+                         "celelalte intră pe o frază din transcript")
     for c in carduri:
         cid = c.get("id", "")
         if not re.fullmatch(r"[a-z0-9-]+", cid):

@@ -6,9 +6,9 @@
  "carduri": [
   {"id": "hook", "ancora": "start", "kicker": "IDEEA REELULUI",
    "randuri": [{"text": "promisiunea, cu **cuvântul important**", "icoana": "zap"}]},
-  {"id": "pasi", "ancora": "start", "kicker": "PAȘII",
-   "randuri": [{"text": "primul **pas**", "icoana": "check"}, {"text": "al doilea **pas**", "icoana": "check", "ancora": "start"}]},
-  {"id": "final", "ancora": "start", "kicker": "NUMELE TĂU", "brand": true,
+  {"id": "pasi", "ancora": "CUVINTELE PE CARE INTRĂ CARDUL", "kicker": "PAȘII",
+   "randuri": [{"text": "primul **pas**", "icoana": "check"}, {"text": "al doilea **pas**", "icoana": "check", "ancora": "CUVINTELE PE CARE APARE RÂNDUL"}]},
+  {"id": "final", "ancora": "CUVINTELE PE CARE INTRĂ CARDUL", "kicker": "NUMELE TĂU", "brand": true,
    "randuri": [{"text": "urmărește-mă pentru **mai multe**", "icoana": "user"}]}
  ]
 }

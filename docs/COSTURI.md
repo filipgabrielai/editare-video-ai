@@ -10,6 +10,8 @@
 
 - Proba de 30 de secunde de la `/instalare`: ~10 secunde.
 - Randarea reelului demo (26 de secunde, 1080x1920, 60 fps): ~2 minute și 15 secunde.
+- Tăietura ascultă cu Whisper capetele care scurtează o bucată, ca niciun cuvânt să nu rămână ciuntit: ~2 secunde pe ascultare
+  (măsurat pe 2 octombrie 2026), între zero și trei ascultări pe bucată. La o re-tăiere se ascultă doar capetele care s-au schimbat.
 
 Pe Windows, mai ales fără placă video Nvidia, transcrierea și randarea merg mai încet; cât de încet depinde de calculator.
 Nu le-am măsurat încă.

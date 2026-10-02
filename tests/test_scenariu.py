@@ -96,6 +96,16 @@ class TestScenariu(unittest.TestCase):
                                                                               "randuri": [{"text": "x"}]}]}, "4:5")
         self.assertTrue(any("4:5" in e and "16:9" in e for e in erori))
 
+    def test_doar_primul_card_porneste_de_la_start(self):
+        # două carduri pe „start” (cum vin în rețete) dădeau o linie de JavaScript ca eroare: al doilea ieșea înainte de secunda zero
+        sc = {"stil": "studio", "carduri": [
+            {"id": "hook", "ancora": "start", "kicker": "A", "randuri": [{"text": "x"}]},
+            {"id": "pasi", "ancora": "start", "kicker": "B", "randuri": [{"text": "y"}]}]}
+        erori, _ = S.valideaza(sc)
+        self.assertEqual(len(erori), 1)
+        self.assertIn("„pasi”", erori[0])
+        self.assertIn("transcript", erori[0])
+
 
 if __name__ == "__main__":
     unittest.main()
