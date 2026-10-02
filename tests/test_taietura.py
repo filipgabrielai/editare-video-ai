@@ -111,6 +111,21 @@ class TestFiltre(unittest.TestCase):
         self.assertIn("crop=1080:1920,setsar=1,smartblur=lr=2.5:ls=0.7:lt=4[v0]", f)
         self.assertNotIn("smartblur", T.filtre([("IMG_1", 1.5, 3.0)], [0.5]))
 
+    def test_filmarea_orizontala_umple_16_9(self):
+        f = T.filtre([("IMG_1", 1.5, 3.0)], [0.5], filmare="16:9")
+        self.assertIn("scale=1920:1080:force_original_aspect_ratio=increase", f)
+        self.assertIn("crop=1920:1080", f)
+        self.assertNotIn("1080:1920", f)
+
+    def test_clipul_orizontal_decupat_la_9_16_se_spune(self):
+        # un clip filmat pe orizontală, tăiat fără --filmare, pierdea marginile în tăcere
+        m = T.avertisment_orientare("IMG_1622", True, "9:16")
+        self.assertIn("orizontală", m)
+        self.assertIn("--filmare 16:9", m)
+        self.assertIn("verticală", T.avertisment_orientare("IMG_1", False, "16:9"))
+        self.assertEqual(T.avertisment_orientare("IMG_1", False, "9:16"), "")
+        self.assertEqual(T.avertisment_orientare("IMG_1", True, "16:9"), "")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tăietura reelului, exactă pe cadre, dintr-o singură encodare.
 
-    python3 procese/editare/taietura.py proiecte/<slug>
+    python3 procese/editare/taietura.py proiecte/<slug> [--filmare 16:9]
 
 bucati.json (scris când alegi dublele): [{"dubla": "IMG_1544_03", "de_la": null, "pana_la": "aplicație#2"}, ...]
 de_la / pana_la: primul / ultimul cuvânt păstrat; „text#n” = a n-a apariție, „text@ultimul” = ultima; null = de la primul /
@@ -9,8 +9,9 @@ până la ultimul cuvânt al dublei; "coada": 0.1 = secunde în plus la capăt, 
 Capetele se pun pe sunet: înapoi până sub −50 dB, cu 0,05 s înainte și 0,02 s după (pauza la tăietură iese de 0,06–0,10 s,
 ritmul care sună natural), fără să intre în cuvântul vecin. Fiecare bucată are intrarea ei (cu -ss), trece prin fps=60 și e
 tăiată la numărul exact de cadre: clipurile de telefon au ~59,97 fps, iar tăiatul pe timpi pierdea sau adăuga un cadru.
-Clipurile în peisaj se decupează la 9:16, nu se deformează. Filtrul pe față din preferințe (brand/brand.json) se aplică aici, pe
-toată imaginea, inclusiv pe înregistrările de ecran.
+Filmarea iese la formatul cerut cu --filmare (implicit 9:16): clipul umple cadrul și se decupează, nu se deformează; dacă
+orientarea lui e alta, tăietura o spune. Filtrul pe față din preferințe (brand/brand.json) se aplică aici, pe toată imaginea,
+inclusiv pe înregistrările de ecran.
 
 Iese: taiat.mp4, voce.wav, taieturi.json, transcript.json (cuvintele pe timpul reelului).
 """
@@ -24,7 +25,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from unelte import brand, platforma, proiect  # noqa: E402
+from unelte import brand, formate, platforma, proiect  # noqa: E402
 
 FPS = 60
 PRAG = -50.0
@@ -124,15 +125,35 @@ def cu_coada(a1: float, coada: float, lim_e: float) -> float:
     return math.floor(min(a1 + coada, lim_e) * FPS + 1e-6) / FPS
 
 
-def filtre(seg: list[tuple[str, float, float]], s0s: list[float], extra: str = "") -> str:
-    """Lanțul ffmpeg al tăieturii; `extra` (filtrul pe față din preferințe) se pune după decupajul la 9:16."""
+def orientare(clip: Path) -> tuple[int, int, int]:
+    """Lățimea, înălțimea și rotația clipului, cum le dă ffprobe."""
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                        "stream=width,height:stream_side_data=rotation", "-of", "json", str(clip)],
+                       capture_output=True, text=True, check=True)
+    s = json.loads(r.stdout)["streams"][0]
+    rot = next((int(float(x["rotation"])) for x in s.get("side_data_list", []) if "rotation" in x), 0)
+    return s["width"], s["height"], rot
+
+
+def avertisment_orientare(nume: str, orizontal: bool, filmare: str) -> str:
+    if orizontal and filmare == "9:16":
+        return (f"atenție: {nume} e filmat pe orizontală și îl decupez la 9:16 (rămâne mijlocul). "
+                "Pentru un video orizontal, refă tăietura cu --filmare 16:9.")
+    if not orizontal and filmare == "16:9":
+        return f"atenție: {nume} e filmat pe verticală; la 16:9 rămâne doar o bandă din mijlocul lui."
+    return ""
+
+
+def filtre(seg: list[tuple[str, float, float]], s0s: list[float], extra: str = "", filmare: str = formate.IMPLICIT) -> str:
+    """Lanțul ffmpeg al tăieturii; `extra` (filtrul pe față din preferințe) se pune după decupajul la formatul filmării."""
     J = 1 / (2 * FPS)
+    w, h = formate.dimensiuni(filmare)
     parti = []
     for k, (_, a0, a1) in enumerate(seg):
         r0, r1 = a0 - s0s[k], a1 - s0s[k]
         n = round((a1 - a0) * FPS)
         parti.append(f"[{k}:v:0]trim={max(0.0, r0 - J):.5f}:{r1 + 4 * J:.5f},setpts=PTS-STARTPTS,fps={FPS},trim=end_frame={n},"
-                     f"setpts=PTS-STARTPTS,scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,crop=1080:1920,setsar=1"
+                     f"setpts=PTS-STARTPTS,scale={w}:{h}:force_original_aspect_ratio=increase:flags=lanczos,crop={w}:{h},setsar=1"
                      f"{',' + extra if extra else ''}[v{k}];"
                      f"[{k}:a:0]atrim={r0:.5f}:{r1:.5f},asetpts=PTS-STARTPTS,aresample=48000[a{k}]")
     parti.append("".join(f"[v{k}][a{k}]" for k in range(len(seg))) + f"concat=n={len(seg)}:v=1:a=1[v][a]")
@@ -141,15 +162,25 @@ def filtre(seg: list[tuple[str, float, float]], s0s: list[float], extra: str = "
 
 def main(argv: list[str] | None = None) -> int:
     platforma.iesire_utf8()
-    argv = sys.argv[1:] if argv is None else argv
+    argv = list(sys.argv[1:] if argv is None else argv)
+    filmare = formate.IMPLICIT
+    if "--filmare" in argv:
+        k = argv.index("--filmare")
+        filmare = argv[k + 1] if k + 1 < len(argv) else ""
+        del argv[k:k + 2]
     if not argv:
-        raise SystemExit("Folosire: taietura.py proiecte/<slug>")
+        raise SystemExit("Folosire: taietura.py proiecte/<slug> [--filmare 16:9]")
+    formate.dimensiuni(filmare)
     dosar = Path(argv[0])
     with open(dosar / "bucati.json", encoding="utf-8") as f:
         bucati = json.load(f)
     with open(dosar / "duble.json", encoding="utf-8") as f:
         duble = {d["dubla"]: d for d in json.load(f)}
     surse = proiect.clipuri(dosar)
+    for nume in sorted({duble[x["dubla"]]["clip"] for x in bucati}):
+        lat, inalt, rot = orientare(surse[nume])
+        if (m := avertisment_orientare(nume, formate.e_orizontal(lat, inalt, rot), filmare)):
+            print(m)
     b = brand.incarca()
     extra = brand.filtru_fata(b)
     if extra:
@@ -185,7 +216,7 @@ def main(argv: list[str] | None = None) -> int:
         s0 = max(0.0, a0 - 1.0)
         s0s.append(s0)
         cmd += ["-ss", f"{s0:.3f}", "-t", f"{a1 - s0 + 1.0:.3f}", "-i", str(surse[c])]
-    cmd += ["-filter_complex", filtre(seg, s0s, extra), "-map", "[v]", "-map", "[a]", "-r", str(FPS), "-c:v", "libx264", "-preset", "fast",
+    cmd += ["-filter_complex", filtre(seg, s0s, extra, filmare), "-map", "[v]", "-map", "[a]", "-r", str(FPS), "-c:v", "libx264", "-preset", "fast",
             "-crf", "14", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "256k", "-ar", "48000", str(dosar / "taiat.mp4")]
     subprocess.run(cmd, check=True)
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(dosar / "taiat.mp4"), "-vn", "-ac", "1", "-ar", "48000",
@@ -195,7 +226,7 @@ def main(argv: list[str] | None = None) -> int:
         t += a1 - a0
         taieturi.append(round(t, 3))
     with open(dosar / "taieturi.json", "w", encoding="utf-8") as f:
-        json.dump({"taieturi": taieturi, "bucati": seg}, f, indent=1)
+        json.dump({"taieturi": taieturi, "bucati": seg, "filmare": filmare}, f, indent=1)
     with open(dosar / "transcript.json", "w", encoding="utf-8") as f:
         json.dump({"words": cuvinte_reel}, f, ensure_ascii=False, indent=1)
     print(f"taiat.mp4: {acc:.2f} s, {len(taieturi)} tăieturi")
