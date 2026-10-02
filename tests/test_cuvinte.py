@@ -55,6 +55,38 @@ class TestCuvinte(unittest.TestCase):
         self.assertNotIn("--prompt", apeluri[0])
         self.assertEqual(apeluri[1][apeluri[1].index("--prompt") + 1], "Claude Code, AI.")
 
+    def test_dubla_cu_timp_de_reluare(self):
+        self.assertEqual(cuvinte.desparte("IMG_1622_32"), ("IMG_1622_32", None))
+        self.assertEqual(cuvinte.desparte("IMG_1622_32@250.5"), ("IMG_1622_32", 250.5))
+
+    def test_transcrierea_de_la_reluare_sare_falsul_start(self):
+        apeluri = []
+
+        def fals(cmd, **kw):
+            apeluri.append(cmd)
+            if "-oj" in cmd:
+                Path(cmd[cmd.index("-of") + 1] + ".json").write_text(json.dumps({"transcription": []}), encoding="utf-8")
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(cuvinte.subprocess, "run", side_effect=fals), \
+                mock.patch.object(cuvinte.platforma, "gaseste", return_value="whisper-cli"), \
+                mock.patch.object(cuvinte.platforma, "cale_pentru_unealta", side_effect=lambda p, b: str(p)):
+            (Path(d) / "lucru").mkdir()
+            (Path(d) / "transcripte").mkdir()
+            vechi = Path(d) / "transcripte" / "c_01.json"
+            vechi.write_text(json.dumps({"dubla": "c_01", "decalaj": 0.85, "words": [{"text": "vechi"}]}), encoding="utf-8")
+            cuvinte.transcrie_dubla(Path(d), {"dubla": "c_01", "clip": "c", "start": 1.0, "end": 6.0}, "ro", "", 2.64)
+            nou = json.loads(vechi.read_text(encoding="utf-8"))
+        ffmpeg = next(c for c in apeluri if c[0] == "ffmpeg")
+        self.assertGreaterEqual(float(ffmpeg[ffmpeg.index("-ss") + 1]), 2.64)   # nimic din falsul start nu ajunge la Whisper
+        self.assertEqual(nou["de_la_timp"], 2.64)
+        self.assertEqual(nou["words"], [])                                         # transcriptul vechi a fost înlocuit
+
+    def test_decalajul_nu_coboara_sub_reluare(self):
+        # falsul start se termină la 2,45 s, reluarea începe la 2,72 s: cu 0,15 s înainte de sunet am intra în falsul start
+        rms = [(-20.0 if (1.0 <= k * T.PAS < 2.45 or 2.72 <= k * T.PAS < 6.0) else -80.0) for k in range(int(7 / T.PAS))]
+        self.assertAlmostEqual(cuvinte.decalaj_pe_sunet(rms, T.PRAG, 2.64, 6.0, 2.64), 2.64, delta=0.01)
+        self.assertAlmostEqual(cuvinte.decalaj_pe_sunet(rms, T.PRAG, 1.0, 6.0), 0.85, delta=0.01)
+
 
 if __name__ == "__main__":
     unittest.main()
