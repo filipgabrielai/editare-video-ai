@@ -263,6 +263,18 @@ class Ascultari:
         self.fisier.write_text(json.dumps(self.date, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def cuvinte_pe_video(ws: list[dict], off: float, a0: float, a1: float, acc: float) -> list[dict]:
+    """Cuvintele bucății, mutate pe timpul videoului (bucata e a0–a1 în clip și începe la acc în video). Fiecare cuvânt stă în
+    bucata lui: Whisper îl pune și cu 0,05 s înainte de sunet, iar un timp dinaintea bucății (negativ, la prima) strica
+    ancorele și subtitrările."""
+    out = []
+    for w in ws:
+        st = min(max(w["start"] + off, a0), a1) - a0 + acc
+        sf = min(max(w["end"] + off, a0), a1) - a0 + acc
+        out.append({"text": w["text"], "start": round(st, 3), "end": round(max(st, sf), 3), "type": "word"})
+    return out
+
+
 def coada_bucatii(b: dict, ultima: bool) -> float:
     """Secundele în plus la capăt: "coada" din bucati.json; la ultima bucată, implicit 0,25 s din filmare după ultimul cuvânt
     (fără ele videoul se termină pe ultima silabă și pare tăiat). Nu e liniște pentru animații și nu e cadru înghețat."""
@@ -388,9 +400,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"   {p['b']['dubla']}: sfârșitul strâns mânca ultimul cuvânt („{p['ws'][-1]['text']}”), rămâne cel normal")
         a1 = cu_coada(a1, coada_bucatii(p["b"], k == len(plan) - 1), p["lim_e"])
         seg.append((p["clip"], a0, a1))
-        for w in p["ws"]:
-            cuvinte_reel.append({"text": w["text"], "start": round(w["start"] + p["off"] - a0 + acc, 3),
-                                 "end": round(w["end"] + p["off"] - a0 + acc, 3), "type": "word"})
+        cuvinte_reel += cuvinte_pe_video(p["ws"], p["off"], a0, a1, acc)
         acc += a1 - a0
         semn = ("[" if strans_in else " ") + ("]" if a_ramas else " ")
         print(f"{p['b']['dubla']:14s} {a0:7.3f}-{a1:7.3f} ({a1 - a0:5.2f} s) {semn} | {' '.join(w['text'] for w in p['ws'])}", flush=True)

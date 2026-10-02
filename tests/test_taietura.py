@@ -251,6 +251,18 @@ class TestStrans(unittest.TestCase):
             mic.asculta("IMG_1", 1.0, 2.5, transcrie)
             self.assertEqual(len(apeluri), 5)
 
+    def test_cuvintele_stau_in_bucata_lor(self):
+        # Whisper pune primul cuvânt și cu 0,05 s înainte de sunet; cu 0,02 s în fața bucății, cuvântul ieșea la −0,03 s în
+        # transcript.json și o ancoră pe el „nu apărea în transcript după 0,00 s” (proba cap-coadă, 2 oct)
+        ws = [{"text": "Mi", "start": 0.10, "end": 0.30}, {"text": "se", "start": 0.30, "end": 0.45}, {"text": "pare.", "start": 0.45, "end": 1.40}]
+        out = T.cuvinte_pe_video(ws, 5.0, 5.15, 6.20, 10.0)        # bucata e 5,15–6,20 în clip și începe la 10,0 în video
+        self.assertEqual([w["text"] for w in out], ["Mi", "se", "pare."])
+        self.assertEqual(out[0]["start"], 10.0)                    # nu înaintea bucății
+        self.assertAlmostEqual(out[0]["end"], 10.15)
+        self.assertAlmostEqual(out[1]["start"], 10.15)
+        self.assertAlmostEqual(out[2]["end"], 11.05)               # nu după bucată
+        self.assertTrue(all(w["start"] <= w["end"] for w in out))
+
     def test_finalul_ramane_pe_om(self):
         # Filip, 2 oct: fără 0,25 s după ultimul cuvânt, cu gura închisă, videoul „pare tăiat”
         self.assertEqual(T.coada_bucatii({}, True), 0.25)
