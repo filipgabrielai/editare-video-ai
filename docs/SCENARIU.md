@@ -1,4 +1,4 @@
-# Scenariul unui reel
+# Scenariul unui video
 
 Claude scrie `proiecte/<slug>/scenariu.json` după ce citește transcriptul și se uită la un cadru din `taiat.mp4`.
 
@@ -18,8 +18,12 @@ Claude scrie `proiecte/<slug>/scenariu.json` după ce citește transcriptul și 
 }
 ```
 
-- `titlu` (opțional): stă sus tot reelul, la 262 px. Cu titlu, cardurile pornesc de la 370 px.
-- `cadru`: `shift` coboară videoul (capul să nu fie sub tabul Reels), `carduri_y` (≥ 262), `captions_y` (≤ 1480, pe guler).
+- `format` (opțional): `"9:16"` (implicit) sau `"16:9"`. Trebuie să fie formatul cu care s-a făcut tăietura
+  (`taietura.py … --filmare 16:9`); altfel compoziția se oprește și îți spune.
+- `titlu` (opțional): stă sus tot videoul (pe reel la 262 px; cu titlu, cardurile pornesc de la 370 px).
+- `cadru`, pe 9:16: `shift` coboară videoul (capul să nu fie sub tabul Reels), `carduri_y` (≥ 262), `captions_y` (≤ 1480, pe guler).
+  Pe 16:9: `carduri` („stanga” sau „dreapta”: partea liberă de lângă om), `carduri_y` (≥ 54; implicit 140, cu titlu 200),
+  `captions_y` (≤ 900, pe piept). Pe 16:9 un rând de card are cel mult 24 de caractere.
 - `corecturi`: ce a auzit Whisper greșit → cum se afișează în captions. Ancorele rămân cum sunt în `transcript.json`.
 - `carduri`: în ordinea din video. `ancora` = „start” sau fraza din transcript pe care intră cardul (scrisă ca în transcript;
   diacriticele, majusculele și punctuația nu contează). Cardul iese când intră următorul; ultimul rămâne până la final.

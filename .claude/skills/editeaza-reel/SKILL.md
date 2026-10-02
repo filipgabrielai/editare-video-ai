@@ -14,13 +14,21 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
 1. **Dublele:** `python3 procese/editare/duble.py "<folder sau clip>" --nume "<numele reelului>"`. Citește TOATE dublele, nu doar ultima.
    De regulă se păstrează ultima dublă întreagă a fiecărei fraze, dar omul schimbă cuvinte între duble și uneori decide altfel;
    ce nu e clar, îl întrebi. Textele fără legătură pe o dublă scurtă („Mulțumim pentru vizionare!”, „Sous-titrage…”) sunt Whisper
-   care aude liniștea.
-2. **Cuvintele** pe dublele alese: `python3 procese/editare/cuvinte.py proiecte/<slug> <dubla> <dubla> ... --vocabular "<nume>"`. În
+   care aude liniștea. Lista o citești din `duble.json`, după ce comanda s-a terminat, nu din ce afișează pe parcurs: altfel îți
+   scapă ultimele duble, care sunt de obicei cele bune.
+1b. **Falsele starturi:** `python3 procese/editare/false_starturi.py proiecte/<slug> <dublele alese>`. Whisper netezește o
+   încercare ruptă lipită de dublă și scrie textul curat; scriptul ascultă ce e înainte și după fiecare pauză din interior.
+   Pentru dublele marcate citești ce s-a auzit înainte și după; dacă e reluare, la pasul 2 transcrii dubla de la reluare, cu
+   `<dubla>@<timp>` (timpul îl dă scriptul).
+2. **Cuvintele** pe dublele alese: `python3 procese/editare/cuvinte.py proiecte/<slug> <dubla> <dubla>@<timp> ... --vocabular "<nume>"`. În
    `--vocabular` pui, cu virgulă, numele de unelte și de oameni pe care le-ai văzut în duble, scrise corect („bolt.new, Lovable”):
    Whisper le primește din start, pe lângă vocabularul din brand, și greșește mai rar.
 3. **Tăietura:** scrii `proiecte/<slug>/bucati.json` (`[{"dubla": "...", "de_la": null, "pana_la": null}]`; „cuvânt#2” = a
    doua apariție, „cuvânt@ultimul” = ultima), apoi `python3 procese/editare/taietura.py proiecte/<slug>`. Verifici în
-   `transcript.json` că primul și ultimul cuvânt al fiecărei bucăți sunt întregi. Când scurtezi, scoți fraze sau blocuri întregi,
+   `transcript.json` că primul și ultimul cuvânt al fiecărei bucăți sunt întregi. O bucată care începe cu „și” se lipește de cea
+   dinainte aproape fără pauză (continuă fraza): dacă „și” deschide altă idee, îi dai `"strans": false`; la o enumerare fără
+   „și”, `"strans": true`. Nu lași cozi de liniște ca să încapă o animație: animația încape pe vorbă sau continuă peste fraza
+   următoare. Ultima bucată ține singură 0,25 s din filmare după ultimul cuvânt. Când scurtezi, scoți fraze sau blocuri întregi,
    niciodată coada unei fraze ca să intri sub o durată. Dacă omul spune că nu se aude finalul unui cuvânt de la capătul unei
    bucăți, îi dai bucății `"coada": 0.1` (secunde în plus la capăt) și refaci tăietura.
 4. **Conținutul:** fiecare cifră, preț, nume de produs se verifică pe sursa primară (site-ul oficial). Ce a spus omul greșit nu
@@ -40,10 +48,13 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
 7. **Compoziția:** `python3 procese/editare/compozitie.py proiecte/<slug>`. Dacă dă erori, repari scenariul.
 8. **Planșele:** `python3 procese/editare/planse.py proiecte/<slug>` și citești fiecare foaie: nimic important în roșu, cardurile nu
    acoperă fața, textul nu iese din card, captions se citesc. Repari și reiei 7–8.
-9. **Randarea:** `python3 procese/editare/randeaza.py proiecte/<slug>`. Dacă verificarea spune „NU TRECE”, nu livrezi: repari
+9. **Randarea:** `python3 procese/editare/randeaza.py proiecte/<slug>`. Verifică întâi ordinea animațiilor; dacă acolo spune
+   „NU TRECE”, nici nu randează. Dacă verificarea de după randare spune „NU TRECE”, nu livrezi: repari
    cauza și randezi din nou.
 10. **Livrarea:** scrii `proiecte/<slug>/DESIGN.md` (ce ai ales și de ce: dublele, ce ai scos, cadrul, cardurile, corecturile);
-    `VERIFY.md` îl scrie randarea. Îi spui unde e fișierul, durata, ce ai verificat, ce ai scos și ce ai corectat. După OK-ul
+    `VERIFY.md` îl scrie randarea. Îi spui unde e fișierul, durata, ce ai verificat, ce ai scos și ce ai corectat. Îi propui și
+    tăieturile de conținut pe care nu le-ai făcut („pot scoate «…», 1,8 s”), pentru fiecare frază fără care spectatorul nu
+    pierde nimic: decide el. După OK-ul
     lui, redenumești în „<Titlu> FINAL.mp4”. Nu publici și nu urci nimic. Îi spui și cum îți dă feedback: o schimbare pe rând,
     cu secunda („la 0:14 e o pauză prea lungă”). Filtrul pe față, captions și sunetele vin din
     preferințele din brand; nu le schimbi din scenariu.

@@ -19,6 +19,13 @@ class TestPunte(unittest.TestCase):
         self.assertIn(f"`{kit}`", t)
         self.assertIn(punte.MARCAJ, t)
 
+    def test_puntea_duce_la_usa_generala(self):
+        # kitul nu mai e doar de reeluri: din sistemul omului se cere orice video, iar pașii sunt ai lui /editeaza
+        kit = Path("/kit")
+        t = punte.text_skill(kit)
+        self.assertIn("orice video", t.split("---")[1])
+        self.assertIn(str(kit / ".claude" / "skills" / "editeaza" / "SKILL.md"), t)
+
     def test_scrie_actualizeaza_si_sterge(self):
         with tempfile.TemporaryDirectory(prefix="acasă ș ") as d:
             dest = punte.destinatie(Path(d))

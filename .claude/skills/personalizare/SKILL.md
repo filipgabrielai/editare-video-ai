@@ -24,6 +24,6 @@ Scopul: `brand/brand.json` scris și o probă de stil pe care omul o vede și o 
 4. Scrii `brand/brand.json` și rulezi `python3 unelte/brand.py`. Dacă spune ce e greșit, repari și rulezi din nou.
 5. Proba: `python3 procese/editare/proba_stil.py` (un minut sau două). Citești `brand/proba-stil.jpg` și i-l arăți: culorile, fontul cu
    „ă â î ș ț”, logoul pe cardul de final. Dacă ceva nu arată bine (diacritice lipsă, logo pe fundal alb), propui schimbarea și reiei 4–5.
-6. La final îi spui că de acum fiecare reel iese așa și că poate rula `/personalizare` oricând.
+6. La final îi spui că de acum fiecare video iese așa și că poate rula `/personalizare` oricând.
 
 Nu urci nimic și nu folosești fonturi sau logouri găsite pe internet fără să-l întrebi.

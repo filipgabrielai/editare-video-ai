@@ -1,14 +1,16 @@
 # editare-video-ai
 
-Kitul meu de editare de reeluri, în română, pe care îl rulezi în Claude Code: pui clipurile brute (duble, greșeli, tot), iar Claude
-alege dublele, taie la cadru, pune cardurile, captions și sunetele, și îți dă un reel 9:16 verificat, în culorile și cu logoul tău.
+Kitul meu de editare video, în română, pe care îl rulezi în Claude Code: pui clipurile brute (duble, greșeli, tot), iar Claude
+alege dublele, taie la cadru, pune cardurile, subtitrările și sunetele, și îți dă videoul verificat, în culorile și cu logoul tău.
 E construit pe ce am învățat editând peste 20 de videouri.
 
-**Ce face acum:** reeluri (Instagram, TikTok, Shorts). Editarea de YouTube și stiluri noi vin în versiunile următoare.
+**Ce face acum:** reeluri 9:16 (Instagram, TikTok, Shorts) și videouri orizontale 16:9 cu tine la cameră (YouTube, site,
+prezentări). Efectele mari (text în spatele tău, ecran împărțit, obiect în palmă) vin pe rând, ca piese; ce există e în
+`docs/PIESE.md`. Un reel clasic iese din una-două runde; un video cu efecte se face în conversație, draft cu draft.
 
 ## Înainte și după
 
-Demo-ul: un clip brut de 2:20 cu 31 de duble → un reel de 26 de secunde. Clipul brut și reelul scos de kit sunt în
+Demo-ul: un clip brut de 2:20 cu 31 de duble → un reel de vreo 25 de secunde. Clipul brut și reelul scos de kit sunt în
 [Release-ul demo](https://github.com/filipgabrielai/editare-video-ai/releases/tag/demo-reel-v1).
 
 ## Ce îți trebuie
@@ -32,8 +34,8 @@ Claude îl aduce, îi citește regulile și te duce prin instalare. De acolo con
    Aprobi comenzile pe care ți le propune; la final îți spune „Gata, poți edita.”
 2. **Personalizare:** `/personalizare`. Îți ia numele, culorile, logoul, fontul, CTA-ul și preferințele (captions, sunete, filtrul pe față),
    apoi îți arată o probă de stil. Detalii în `docs/PERSONALIZARE.md`.
-3. **Editare:** pune clipurile într-un folder și scrie `/editeaza-reel "<calea către folder>"`. Primești în `proiecte/` reelul, gata de
-   postat după ce te uiți pe el. Vrei să încerci fără clipurile tale: `python3 instalare/descarca.py demo` și urmezi `exemple/demo-reel/README.md`.
+3. **Editare:** pune clipurile într-un folder și scrie `/editeaza` urmat de calea către folder (orice video), sau `/editeaza-reel`
+   urmat de cale (direct reel). Primești în `proiecte/` videoul, gata de postat după ce te uiți pe el. Procesul, pas cu pas, e în `docs/PROCES.md`. Vrei să încerci fără clipurile tale: `python3 instalare/descarca.py demo` și urmezi `exemple/demo-reel/README.md`.
 
 ## Cum îi dai feedback
 
@@ -44,7 +46,7 @@ Claude repară, randează un draft nou și îl verifică din nou. FINAL se face 
 ## Din sistemul tău de Claude Code
 
 Dacă ai deja un sistem în Claude Code, scrie `/leaga-de-sistem`: kitul rămâne în folderul lui, iar din orice proiect poți cere
-„editează reelul din folderul X”. Se scoate oricând.
+„editează videoul din folderul X”. Se scoate oricând.
 
 ## Cât costă
 

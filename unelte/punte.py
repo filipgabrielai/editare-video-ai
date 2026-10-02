@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Puntea spre sistemul tău de Claude Code: un skill mic în ~/.claude/skills/editare-video-ai/ care spune unde e kitul. Din orice
-sesiune Claude Code („editează reelul din folderul X”) Claude lucrează apoi în folderul kitului, cu regulile lui. Kitul rămâne
+sesiune Claude Code („editează videoul din folderul X”) Claude lucrează apoi în folderul kitului, cu regulile lui. Kitul rămâne
 separat și se actualizează ca până acum; skill-ul se șterge oricând.
 
     python3 unelte/punte.py instaleaza     scrie (sau actualizează) skill-ul
@@ -27,16 +27,16 @@ def destinatie(acasa: Path | None = None) -> Path:
 def text_skill(kit: Path) -> str:
     return f"""---
 name: {NUME}
-description: Editează un reel (9:16) din clipuri brute cu kitul editare-video-ai, care stă în {kit}. Folosește când omul cere să editeze un reel, un short sau un TikTok din clipurile lui, din orice proiect.
+description: Editează orice video (reel 9:16 sau orizontal 16:9) din clipuri brute cu kitul editare-video-ai, care stă în {kit}. Folosește când omul cere să-i editezi un video, un reel, un short sau un clip pentru YouTube din clipurile lui, din orice proiect.
 ---
 
 {MARCAJ}
 
 Kitul de editare e în: `{kit}`
 
-Când omul cere un reel:
+Când omul cere un video:
 1. Lucrezi în folderul kitului: comenzile le rulezi de acolo, iar proiectul iese în `{kit / 'proiecte'}`. Clipurile lui rămân unde sunt.
-2. Citești `{kit / 'CLAUDE.md'}` și `{kit / '.claude' / 'skills' / 'editeaza-reel' / 'SKILL.md'}` și urmezi pașii de acolo.
+2. Citești `{kit / 'CLAUDE.md'}` și `{kit / '.claude' / 'skills' / 'editeaza' / 'SKILL.md'}` și urmezi pașii de acolo.
 3. Brandul și preferințele lui sunt în `{kit / 'brand' / 'brand.json'}`. Dacă lipsește, îi propui personalizarea din kit
    (`{kit / '.claude' / 'skills' / 'personalizare' / 'SKILL.md'}`).
 4. La editare au prioritate regulile kitului; pentru restul, regulile sistemului lui.

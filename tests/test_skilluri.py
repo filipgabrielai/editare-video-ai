@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 RAD = Path(__file__).resolve().parents[1]
-USI = ("instalare", "personalizare", "editeaza-reel", "leaga-de-sistem")
+USI = ("instalare", "personalizare", "editeaza", "editeaza-reel", "leaga-de-sistem")
 
 
 class TestSkilluri(unittest.TestCase):
@@ -35,6 +35,41 @@ class TestSkilluri(unittest.TestCase):
         self.assertIn("## Cum îi dai feedback", readme)
         self.assertIn("`vocabular`", (RAD / "docs" / "PERSONALIZARE.md").read_text(encoding="utf-8"))
         self.assertIn("--vocabular", (RAD / ".claude" / "skills" / "editeaza-reel" / "SKILL.md").read_text(encoding="utf-8"))
+
+    def test_kitul_nu_mai_e_doar_de_reeluri(self):
+        readme = (RAD / "README.md").read_text(encoding="utf-8")
+        self.assertIn("`/editeaza`", readme)
+        self.assertIn("16:9", readme)
+        self.assertNotIn("Kitul meu de editare de reeluri", readme)
+        usa = (RAD / ".claude" / "skills" / "editeaza" / "SKILL.md").read_text(encoding="utf-8")
+        for x in ("--filmare 16:9", "retete/README.md", "docs/PROCES.md", "docs/PIESE.md", "Planul pe momente"):
+            self.assertIn(x, usa)
+
+    def test_ce_nu_e_inca_in_kit_se_spune(self):
+        # cine vine din ghid nu trebuie să aștepte un efect și să primească altceva
+        piese = (RAD / "docs" / "PIESE.md").read_text(encoding="utf-8")
+        for x in ("text în spatele", "ecran împărțit", "obiect în palmă", "nu e încă în kit"):
+            self.assertIn(x, piese)
+        self.assertIn("nu e încă în kit", (RAD / ".claude" / "skills" / "editeaza" / "SKILL.md").read_text(encoding="utf-8"))
+        self.assertIn("docs/PIESE.md", (RAD / "README.md").read_text(encoding="utf-8"))
+
+    def test_lectiile_de_taietura_sunt_in_pasii_de_reel(self):
+        reel = (RAD / ".claude" / "skills" / "editeaza-reel" / "SKILL.md").read_text(encoding="utf-8")
+        for x in ("false_starturi.py", '"strans": false', "<dubla>@<timp>", "pot scoate", "procese/editare/", "duble.json"):
+            self.assertIn(x, reel)
+        ghid = (RAD / "CLAUDE.md").read_text(encoding="utf-8")
+        self.assertIn("Fără cozi de liniște pentru animații", ghid)
+        self.assertIn("docs/PIESE.md", ghid)
+
+    def test_procesul_are_cele_cinci_faze(self):
+        proces = (RAD / "docs" / "PROCES.md").read_text(encoding="utf-8")
+        for faza in ("## 1. Filmezi", "## 2. Ascultă", "## 3. Se uită", "## 4. Construiește", "## 5. Te uiți și dai note"):
+            self.assertIn(faza, proces)
+
+    def test_scenariul_spune_de_format(self):
+        sc = (RAD / "docs" / "SCENARIU.md").read_text(encoding="utf-8")
+        for x in ('`format`', "--filmare", '„stanga”'):
+            self.assertIn(x, sc)
 
 
 if __name__ == "__main__":
