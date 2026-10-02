@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tăietura reelului, exactă pe cadre, dintr-o singură encodare.
 
-    python3 procese/reel/taietura.py proiecte/<slug>
+    python3 procese/editare/taietura.py proiecte/<slug>
 
 bucati.json (scris când alegi dublele): [{"dubla": "IMG_1544_03", "de_la": null, "pana_la": "aplicație#2"}, ...]
 de_la / pana_la: primul / ultimul cuvânt păstrat; „text#n” = a n-a apariție, „text@ultimul” = ultima; null = de la primul /

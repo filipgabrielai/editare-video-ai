@@ -11,15 +11,15 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
 
 0. **Brandul:** rulează `python3 unelte/brand.py`. Dacă nu există `brand/brand.json`, îi propui `/personalizare` înainte
    (două minute); dacă vrea direct reelul, continui cu stilul Studio.
-1. **Dublele:** `python3 procese/reel/duble.py "<folder sau clip>" --nume "<numele reelului>"`. Citește TOATE dublele, nu doar ultima.
+1. **Dublele:** `python3 procese/editare/duble.py "<folder sau clip>" --nume "<numele reelului>"`. Citește TOATE dublele, nu doar ultima.
    De regulă se păstrează ultima dublă întreagă a fiecărei fraze, dar omul schimbă cuvinte între duble și uneori decide altfel;
    ce nu e clar, îl întrebi. Textele fără legătură pe o dublă scurtă („Mulțumim pentru vizionare!”, „Sous-titrage…”) sunt Whisper
    care aude liniștea.
-2. **Cuvintele** pe dublele alese: `python3 procese/reel/cuvinte.py proiecte/<slug> <dubla> <dubla> ... --vocabular "<nume>"`. În
+2. **Cuvintele** pe dublele alese: `python3 procese/editare/cuvinte.py proiecte/<slug> <dubla> <dubla> ... --vocabular "<nume>"`. În
    `--vocabular` pui, cu virgulă, numele de unelte și de oameni pe care le-ai văzut în duble, scrise corect („bolt.new, Lovable”):
    Whisper le primește din start, pe lângă vocabularul din brand, și greșește mai rar.
 3. **Tăietura:** scrii `proiecte/<slug>/bucati.json` (`[{"dubla": "...", "de_la": null, "pana_la": null}]`; „cuvânt#2” = a
-   doua apariție, „cuvânt@ultimul” = ultima), apoi `python3 procese/reel/taietura.py proiecte/<slug>`. Verifici în
+   doua apariție, „cuvânt@ultimul” = ultima), apoi `python3 procese/editare/taietura.py proiecte/<slug>`. Verifici în
    `transcript.json` că primul și ultimul cuvânt al fiecărei bucăți sunt întregi. Când scurtezi, scoți fraze sau blocuri întregi,
    niciodată coada unei fraze ca să intri sub o durată. Dacă omul spune că nu se aude finalul unui cuvânt de la capătul unei
    bucăți, îi dai bucății `"coada": 0.1` (secunde în plus la capăt) și refaci tăietura.
@@ -37,10 +37,10 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
    („despre ei” → „despre AI”), niciodată „ei” singur, fiindcă e și cuvânt românesc. Cu `carduri: putine` în brand: hook,
    cel mult două carduri și finalul. Cardul de final (CTA) primește `"brand": true` (logoul lui lângă kicker, numele lui ca
    kicker dacă are); textul lui pornește de la `cta` din brand, adaptat la ce spune omul în clip.
-7. **Compoziția:** `python3 procese/reel/compozitie.py proiecte/<slug>`. Dacă dă erori, repari scenariul.
-8. **Planșele:** `python3 procese/reel/planse.py proiecte/<slug>` și citești fiecare foaie: nimic important în roșu, cardurile nu
+7. **Compoziția:** `python3 procese/editare/compozitie.py proiecte/<slug>`. Dacă dă erori, repari scenariul.
+8. **Planșele:** `python3 procese/editare/planse.py proiecte/<slug>` și citești fiecare foaie: nimic important în roșu, cardurile nu
    acoperă fața, textul nu iese din card, captions se citesc. Repari și reiei 7–8.
-9. **Randarea:** `python3 procese/reel/randeaza.py proiecte/<slug>`. Dacă verificarea spune „NU TRECE”, nu livrezi: repari
+9. **Randarea:** `python3 procese/editare/randeaza.py proiecte/<slug>`. Dacă verificarea spune „NU TRECE”, nu livrezi: repari
    cauza și randezi din nou.
 10. **Livrarea:** scrii `proiecte/<slug>/DESIGN.md` (ce ai ales și de ce: dublele, ce ai scos, cadrul, cardurile, corecturile);
     `VERIFY.md` îl scrie randarea. Îi spui unde e fișierul, durata, ce ai verificat, ce ai scos și ce ai corectat. După OK-ul

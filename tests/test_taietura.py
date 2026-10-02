@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from procese.reel import taietura as T  # noqa: E402
+from procese.editare import taietura as T  # noqa: E402
 
 WS = [{"text": t} for t in ["Și", "totodată,", "în", "aplicație", "pot", "în", "aplicație,", "ca"]]
 

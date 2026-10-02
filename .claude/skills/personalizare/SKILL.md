@@ -22,7 +22,7 @@ Scopul: `brand/brand.json` scris și o probă de stil pe care omul o vede și o 
 3. Preferințele: captions (da), carduri (normal; „puține” = doar hook, 1–2 carduri și finalul), sunete (normale / încete / oprite),
    filtrul pe față (niciunul / ușor / mediu: netezește pielea și luminează puțin, ca retușul din CapCut, pe toată imaginea), limba (română).
 4. Scrii `brand/brand.json` și rulezi `python3 unelte/brand.py`. Dacă spune ce e greșit, repari și rulezi din nou.
-5. Proba: `python3 procese/reel/proba_stil.py` (un minut sau două). Citești `brand/proba-stil.jpg` și i-l arăți: culorile, fontul cu
+5. Proba: `python3 procese/editare/proba_stil.py` (un minut sau două). Citești `brand/proba-stil.jpg` și i-l arăți: culorile, fontul cu
    „ă â î ș ț”, logoul pe cardul de final. Dacă ceva nu arată bine (diacritice lipsă, logo pe fundal alb), propui schimbarea și reiei 4–5.
 6. La final îi spui că de acum fiecare reel iese așa și că poate rula `/personalizare` oricând.
 

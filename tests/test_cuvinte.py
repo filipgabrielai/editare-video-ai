@@ -7,8 +7,8 @@ from pathlib import Path
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from procese.reel import cuvinte  # noqa: E402
-from procese.reel import taietura as T  # noqa: E402
+from procese.editare import cuvinte  # noqa: E402
+from procese.editare import taietura as T  # noqa: E402
 
 WHISPER = {"transcription": [
     {"text": " Mi", "offsets": {"from": 120, "to": 300}},

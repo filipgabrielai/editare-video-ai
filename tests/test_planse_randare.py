@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from procese.reel import planse, randeaza  # noqa: E402
+from procese.editare import planse, randeaza  # noqa: E402
 
 
 class TestPlanse(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestRandare(unittest.TestCase):
             self.assertEqual(randeaza.urmatorul_draft(Path(d), 'a/b\\c*"d"<e>|').name, "abcde DRAFT 1.mp4")
 
     def test_verify_md_cu_cifrele(self):
-        from verificare import reel as V
+        from verificare import video as V
         with tempfile.TemporaryDirectory() as d:
             r = V.evalueaza(V.Rezultat(negre=[], lag=[(1.0, 0, 0.9)], taieturi=[(1.0, 1.0, 0.0)], lufs=-14.1))
             randeaza.scrie_verify(Path(d), Path(d) / "Reel DRAFT 1.mp4", r)

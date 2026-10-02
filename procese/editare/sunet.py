@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Vocea la −14 LUFS (true peak −1,5) în două treceri, imaginea copiată.
 
-    python3 procese/reel/sunet.py <intrare.mp4> <iesire.mp4>
+    python3 procese/editare/sunet.py <intrare.mp4> <iesire.mp4>
 
 Vocea brută e pe la −22 LUFS cu vârfuri de −6 dBTP, deci loudnorm nu poate rămâne liniar și trece singur pe dinamic; la capătul
 fișierului golește bufferul (~3 s) decalat. De aceea: 5 s de liniște adăugate, loudnorm, apoi tăiat înapoi exact la durata sunetului.

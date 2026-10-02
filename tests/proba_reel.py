@@ -15,7 +15,7 @@ from pathlib import Path
 
 RAD = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAD))
-from procese.reel import compozitie, cuvinte, duble, randeaza, taietura  # noqa: E402
+from procese.editare import compozitie, cuvinte, duble, randeaza, taietura  # noqa: E402
 from unelte import platforma, proiect  # noqa: E402
 
 NUME = "proba reel automata"

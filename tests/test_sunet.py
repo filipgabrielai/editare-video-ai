@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from procese.reel import sunet  # noqa: E402
+from procese.editare import sunet  # noqa: E402
 
 LOG = """[Parsed_loudnorm_0 @ 0x1]
 {

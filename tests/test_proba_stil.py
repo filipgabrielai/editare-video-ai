@@ -5,8 +5,8 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from procese.reel import proba_stil as P  # noqa: E402
-from procese.reel import scenariu as S  # noqa: E402
+from procese.editare import proba_stil as P  # noqa: E402
+from procese.editare import scenariu as S  # noqa: E402
 from unelte import brand  # noqa: E402
 
 

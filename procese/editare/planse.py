@@ -2,7 +2,7 @@
 """Planșele de dinainte de randare: cadre la intrarea, mijlocul și ieșirea fiecărui card, cu zonele acoperite de Instagram
 marcate cu roșu (sus tabul „Reels”, jos numele și descrierea, în dreapta butoanele). Nimic important nu are voie în roșu.
 
-    python3 procese/reel/planse.py proiecte/<slug>          → proiecte/<slug>/planse/foaie-01.jpg, ...
+    python3 procese/editare/planse.py proiecte/<slug>          → proiecte/<slug>/planse/foaie-01.jpg, ...
 """
 from __future__ import annotations
 

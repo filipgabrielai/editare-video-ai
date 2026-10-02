@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compoziția unui reel: din scenariu.json, transcript.json și taieturi.json iese index.html pentru HyperFrames.
 
-    python3 procese/reel/compozitie.py proiecte/<slug>
+    python3 procese/editare/compozitie.py proiecte/<slug>
 
 Singură: captions cuvânt cu cuvânt (cuvântul spus e colorat), zoom ușor la fiecare tăietură (pe grila de cadre), umbra de sus,
 sunetele în rotație. Din scenariu: titlul, cardurile, rândurile, chipurile, cifrele și cuvintele pe care intră. Reguli: primul
@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from procese.reel import scenariu as S  # noqa: E402
+from procese.editare import scenariu as S  # noqa: E402
 from unelte import brand, hyperframes, platforma  # noqa: E402
 
 FPS = 60

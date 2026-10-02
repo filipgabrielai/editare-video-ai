@@ -2,7 +2,7 @@
 """Verificarea unui reel randat: cadre negre, vocea față de voce.wav (în mai multe puncte), tăieturile din imagine față de cele
 din sunet, loudness. Un draft care pică aici nu se anunță ca gata.
 
-    python3 verificare/reel.py proiecte/<slug>/<fișierul randat>.mp4
+    python3 verificare/video.py proiecte/<slug>/<fișierul randat>.mp4
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from procese.reel import sunet  # noqa: E402
+from procese.editare import sunet  # noqa: E402
 from unelte import platforma  # noqa: E402
 
 SR = 8000

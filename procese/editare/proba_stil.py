@@ -2,7 +2,7 @@
 """Proba de stil: 4 secunde cu un card, captions și cardul de final în brandul tău, ca să vezi cum arată înainte de primul reel.
 Textul are „ă â î ș ț”: dacă fontul tău nu le are, se vede aici.
 
-    python3 procese/reel/proba_stil.py        → brand/proba-stil.mp4 și brand/proba-stil.jpg
+    python3 procese/editare/proba_stil.py        → brand/proba-stil.mp4 și brand/proba-stil.jpg
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from procese.reel import compozitie  # noqa: E402
+from procese.editare import compozitie  # noqa: E402
 from unelte import brand, hyperframes, platforma  # noqa: E402
 
 TEXT = "Așa arată reelurile tale: cardurile, captions și cardul de final, cu ă, â, î, ș, ț."

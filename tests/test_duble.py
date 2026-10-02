@@ -8,7 +8,7 @@ from unittest import mock
 
 RAD = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAD))
-from procese.reel import duble  # noqa: E402
+from procese.editare import duble  # noqa: E402
 
 STDERR = """[silencedetect @ 0x1] silence_start: -0.00266667
 [silencedetect @ 0x1] silence_end: 1.2 | silence_duration: 1.2

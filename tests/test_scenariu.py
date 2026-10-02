@@ -6,7 +6,7 @@ from pathlib import Path
 
 RAD = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAD))
-from procese.reel import scenariu as S  # noqa: E402
+from procese.editare import scenariu as S  # noqa: E402
 
 DATE = RAD / "tests" / "date" / "reel"
 SC = json.loads((DATE / "scenariu.json").read_text(encoding="utf-8"))

@@ -29,4 +29,4 @@
   imaginea, inclusiv pe înregistrările de ecran.
 - `preferinte.limba`: limba în care vorbești, pentru transcriere (`ro`, `en`...). Kitul e testat pe română.
 
-Ce nu e setat rămâne ca în stilul Studio. Proba de stil (`python3 procese/reel/proba_stil.py`) îți arată rezultatul în `brand/proba-stil.jpg`.
+Ce nu e setat rămâne ca în stilul Studio. Proba de stil (`python3 procese/editare/proba_stil.py`) îți arată rezultatul în `brand/proba-stil.jpg`.

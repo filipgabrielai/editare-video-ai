@@ -19,7 +19,7 @@ class TestPrivat(unittest.TestCase):
             self.assertIn(fel, " ".join(gasite))
 
     def test_textul_curat(self):
-        self.assertEqual(privat.in_text("python3 procese/reel/taietura.py proiecte/<slug>"), [])
+        self.assertEqual(privat.in_text("python3 procese/editare/taietura.py proiecte/<slug>"), [])
 
     @unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg lipsește")
     def test_locatia_din_metadate(self):

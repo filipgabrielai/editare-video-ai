@@ -2,7 +2,7 @@
 """Dublele unui reel: fiecare clip se împarte pe tăceri (−38 dB, 0,45 s), iar fiecare dublă (sunetul dintre două tăceri) se
 transcrie local cu whisper.cpp, ca să alegi citind. Nimic nu pleacă de pe calculator.
 
-    python3 procese/reel/duble.py "<folderul cu clipuri sau un clip>" [--nume "Numele reelului"]
+    python3 procese/editare/duble.py "<folderul cu clipuri sau un clip>" [--nume "Numele reelului"]
 
 Iese în proiecte/<slug>/: sursa.json, lucru/<clip>.wav (16 kHz, pentru whisper), lucru/<clip>.raw (8 kHz, pentru capetele
 tăieturii) și duble.json [{dubla, clip, nr, start, end, text}], cu timpii în clip.

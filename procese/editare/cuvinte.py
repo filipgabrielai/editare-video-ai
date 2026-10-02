@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Cuvintele cu timpi pe dublele alese (whisper.cpp local, un cuvânt pe segment), pentru tăietură și captions.
 
-    python3 procese/reel/cuvinte.py proiecte/<slug> IMG_1544_03 IMG_1545_06 ...
+    python3 procese/editare/cuvinte.py proiecte/<slug> IMG_1544_03 IMG_1545_06 ...
 
 Iese transcripte/<dubla>.json = {dubla, decalaj, words}: timpii din words sunt relativi la bucata tăiată din clip, care începe
 la decalaj = 0,15 s înainte de sunetul primului cuvânt (nu de segmentul Whisper, care poate începe peste liniște și buze);
@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from procese.reel import taietura  # noqa: E402
+from procese.editare import taietura  # noqa: E402
 from unelte import brand, platforma  # noqa: E402
 
 

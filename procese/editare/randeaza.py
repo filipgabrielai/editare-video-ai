@@ -2,7 +2,7 @@
 """Randarea reelului la calitatea finală, vocea la −14 LUFS și verificarea. Fișierul se numește „<Titlu> DRAFT n.mp4”;
 FINAL se face doar după OK-ul omului (redenumire, nu randare nouă).
 
-    python3 procese/reel/randeaza.py proiecte/<slug> [--fps 60] [--calitate high]
+    python3 procese/editare/randeaza.py proiecte/<slug> [--fps 60] [--calitate high]
 """
 from __future__ import annotations
 
@@ -14,9 +14,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from procese.reel import sunet  # noqa: E402
+from procese.editare import sunet  # noqa: E402
 from unelte import hyperframes, platforma  # noqa: E402
-from verificare import reel as verificare_reel  # noqa: E402
+from verificare import video as verificare_video  # noqa: E402
 
 
 def nume_fisier(titlu: str) -> str:
@@ -31,10 +31,10 @@ def urmatorul_draft(dosar: Path, titlu: str) -> Path:
     return dosar / f"{titlu} DRAFT {max(nr, default=0) + 1}.mp4"
 
 
-def scrie_verify(dosar: Path, draft: Path, r: verificare_reel.Rezultat) -> Path:
+def scrie_verify(dosar: Path, draft: Path, r: verificare_video.Rezultat) -> Path:
     """VERIFY.md în proiect: ce s-a verificat pe draft, cu cifre."""
     tinta = dosar / "VERIFY.md"
-    tinta.write_text(f"# Verificare: {draft.name}\n\n```\n{verificare_reel.raport(r)}\n```\n", encoding="utf-8")
+    tinta.write_text(f"# Verificare: {draft.name}\n\n```\n{verificare_video.raport(r)}\n```\n", encoding="utf-8")
     return tinta
 
 
@@ -56,8 +56,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{iesire.name}: vocea la {lufs:.1f} LUFS. Verific...", flush=True)
     with open(dosar / "taieturi.json", encoding="utf-8") as f:
         cuts = json.load(f)["taieturi"]
-    r = verificare_reel.verifica(iesire, dosar / "voce.wav", cuts, a.fps, verificare_reel.durata_video(dosar / "taiat.mp4"))
-    print(verificare_reel.raport(r))
+    r = verificare_video.verifica(iesire, dosar / "voce.wav", cuts, a.fps, verificare_video.durata_video(dosar / "taiat.mp4"))
+    print(verificare_video.raport(r))
     scrie_verify(dosar, iesire, r)
     return 0 if r.ok else 1
 
