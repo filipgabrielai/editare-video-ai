@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><title>Productivitate cu AI</title>
+<script src="assets/gsap.min.js"></script>
+<link rel="stylesheet" href="assets/fonturi/fonturi.css">
+<link rel="stylesheet" href="assets/stil.css">
+<link rel="stylesheet" href="assets/brand.css">
+</head><body>
+<div id="reel" data-composition-id="reel" data-start="0" data-duration="6.0000" data-width="1080" data-height="1920"
+  style="--shift:120px;--carduri-y:370px;--captions-y:1480px;--compact-y:340px">
+  <div id="fund" class="clip" data-start="0" data-duration="6.0000" data-track-index="0"></div>
+  <div id="stage">
+    <video id="vid" class="clip" data-start="0" data-duration="6.0000" data-track-index="1" src="taiat.mp4" muted playsinline></video>
+  </div>
+  <div id="umbra"></div>
+  <div id="umbra2"></div>
+  <audio id="voce" data-start="0" data-duration="6.0000" data-track-index="9" src="voce.wav" data-volume="1"></audio>
+    <div id="titlu">Productivitate cu AI</div>
+  <div class="card" id="c-hook"><div class="k">PRODUCTIVITATE CU AI</div><div class="row" id="c-hook-r0"><span class="ic"><svg viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></svg></span><span class="et">câte lucruri faci cu <b>AI</b></span></div><div class="row ascuns" id="c-hook-r1"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16" /> <path d="M18 17V9" /> <path d="M13 17V5" /> <path d="M8 17v-3" /></svg></span><span class="et">cât de <b>productiv</b> poți fi</span></div></div>
+  <div class="card compact" id="c-stanga"><div class="k">ÎN STÂNGA · CLAUDE CODE</div><div class="row chips"><span class="chip" id="c-stanga-ch0"><span>rulează</span></span><span class="chip" id="c-stanga-ch1"><span>verifică</span></span></div></div>
+  <div id="captii">
+      <div class="cap" id="cap-0"><span class="cw" id="cw-0-0">Mi</span><span class="cw" id="cw-0-1">se</span><span class="cw" id="cw-0-2">pare</span></div>
+    <div class="cap" id="cap-1"><span class="cw" id="cw-1-0">incredibil</span><span class="cw" id="cw-1-1">cât</span><span class="cw" id="cw-1-2">de</span></div>
+    <div class="cap" id="cap-2"><span class="cw" id="cw-2-0">productiv</span><span class="cw" id="cw-2-1">poți</span><span class="cw" id="cw-2-2">fi.</span></div>
+    <div class="cap" id="cap-3"><span class="cw" id="cw-3-0">Aici,</span></div>
+    <div class="cap" id="cap-4"><span class="cw" id="cw-4-0">în</span><span class="cw" id="cw-4-1">stânga,</span></div>
+    <div class="cap" id="cap-5"><span class="cw" id="cw-5-0">Claude Code</span></div>
+    <div class="cap" id="cap-6"><span class="cw" id="cw-6-0">rulează</span><span class="cw" id="cw-6-1">și</span><span class="cw" id="cw-6-2">verifică.</span></div>
+  </div>
+  <audio id="sfx-0" data-start="0.050" data-duration="0.600" data-track-index="20" src="assets/sunete/boom.wav" data-volume="0.6"></audio>
+  <audio id="sfx-1" data-start="1.267" data-duration="0.120" data-track-index="21" src="assets/sunete/pop.wav" data-volume="0.55"></audio>
+  <audio id="sfx-2" data-start="2.950" data-duration="0.200" data-track-index="22" src="assets/sunete/knock.wav" data-volume="0.35"></audio>
+  <audio id="sfx-3" data-start="4.567" data-duration="0.250" data-track-index="23" src="assets/sunete/thump.wav" data-volume="0.5"></audio>
+</div>
+<script>
+  window.__timelines = window.__timelines || {};
+  (function() {
+    const tl = gsap.timeline({ paused: true });
+    tl.set("#stage", {scale:1.06}, 2.7990);
+    tl.fromTo("#titlu", {autoAlpha:0, y:-12}, {autoAlpha:1, y:0, duration:0.45, ease:"power2.out"}, 0.05);
+    tl.fromTo("#c-hook", {xPercent:-50, autoAlpha:0, y:-26, scale:0.94, filter:"blur(10px)"}, {xPercent:-50, autoAlpha:1, y:0, scale:1, filter:"blur(0px)", duration:0.5, ease:"back.out(1.3)"}, 0.050);
+    tl.to("#c-hook", {autoAlpha:0, y:-30, scale:0.96, duration:0.28, ease:"power1.in"}, 2.870);
+    tl.fromTo("#c-hook-r1", {height:0, minHeight:0, autoAlpha:0, x:-18}, {height:84, minHeight:84, autoAlpha:1, x:0, duration:0.32, ease:"power2.out"}, 1.270);
+    tl.fromTo("#c-stanga", {xPercent:-50, autoAlpha:0, y:-26, scale:0.94, filter:"blur(10px)"}, {xPercent:-50, autoAlpha:1, y:0, scale:1, filter:"blur(0px)", duration:0.5, ease:"back.out(1.3)"}, 2.950);
+    tl.set("#umbra", {autoAlpha:0}, 2.950);
+    tl.set("#umbra2", {autoAlpha:1}, 2.950);
+    tl.set("#c-stanga-ch0", {autoAlpha:1}, 2.950);
+    tl.fromTo("#c-stanga-ch0", {backgroundColor:"rgba(148,163,184,.08)", borderColor:"rgba(148,163,184,.3)", color:"#94a3b8"}, {backgroundColor:"rgba(56,189,248,.18)", borderColor:"rgba(56,189,248,.8)", color:"#ffffff", duration:0.2, immediateRender:false}, 4.570);
+    tl.set("#c-stanga-ch1", {autoAlpha:1}, 2.950);
+    tl.fromTo("#c-stanga-ch1", {backgroundColor:"rgba(148,163,184,.08)", borderColor:"rgba(148,163,184,.3)", color:"#94a3b8"}, {backgroundColor:"rgba(56,189,248,.18)", borderColor:"rgba(56,189,248,.8)", color:"#ffffff", duration:0.2, immediateRender:false}, 5.170);
+    tl.fromTo("#cap-0", {xPercent:-50, autoAlpha:0, y:14, scale:0.96}, {xPercent:-50, autoAlpha:1, y:0, scale:1, duration:0.180, ease:"power2.out"}, 0.070);
+    tl.to("#cap-0", {autoAlpha:0, duration:0.120, ease:"power1.in", overwrite:"auto"}, 0.450);
+    tl.set("#cap-0", {autoAlpha:0}, 0.571);
+    tl.to("#cw-0-0", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 0.070);
+    tl.to("#cw-0-1", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 0.190);
+    tl.to("#cw-0-0", {color:"#ffffff", scale:1, duration:0.100, ease:"power2.out", overwrite:"auto"}, 0.190);
+    tl.to("#cw-0-2", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 0.310);
+    tl.to("#cw-0-1", {color:"#ffffff", scale:1, duration:0.100, ease:"power2.out", overwrite:"auto"}, 0.310);
+    tl.fromTo("#cap-1", {xPercent:-50, autoAlpha:0, y:14, scale:0.96}, {xPercent:-50, autoAlpha:1, y:0, scale:1, duration:0.180, ease:"power2.out"}, 0.570);
+    tl.to("#cap-1", {autoAlpha:0, duration:0.120, ease:"power1.in", overwrite:"auto"}, 1.400);
+    tl.set("#cap-1", {autoAlpha:0}, 1.521);
+    tl.to("#cw-1-0", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 0.570);
+    tl.to("#cw-1-1", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 1.270);
+    tl.to("#cw-1-0", {color:"#ffffff", scale:1, duration:0.100, ease:"power2.out", overwrite:"auto"}, 1.270);
+    tl.to("#cw-1-2", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 1.420);
+    tl.to("#cw-1-1", {color:"#ffffff", scale:1, duration:0.100, ease:"power2.out", overwrite:"auto"}, 1.420);
+    tl.fromTo("#cap-2", {xPercent:-50, autoAlpha:0, y:14, scale:0.96}, {xPercent:-50, autoAlpha:1, y:0, scale:1, duration:0.180, ease:"power2.out"}, 1.520);
+    tl.to("#cap-2", {autoAlpha:0, duration:0.120, ease:"power1.in", overwrite:"auto"}, 2.850);
+    tl.set("#cap-2", {autoAlpha:0}, 2.971);
+    tl.to("#cw-2-0", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 1.520);
+    tl.to("#cw-2-1", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 2.070);
+    tl.to("#cw-2-0", {color:"#ffffff", scale:1, duration:0.100, ease:"power2.out", overwrite:"auto"}, 2.070);
+    tl.to("#cw-2-2", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 2.270);
+    tl.to("#cw-2-1", {color:"#ffffff", scale:1, duration:0.100, ease:"power2.out", overwrite:"auto"}, 2.270);
+    tl.fromTo("#cap-3", {xPercent:-50, autoAlpha:0, y:14, scale:0.96}, {xPercent:-50, autoAlpha:1, y:0, scale:1, duration:0.100, ease:"power2.out"}, 2.970);
+    tl.to("#cap-3", {autoAlpha:0, duration:0.120, ease:"power1.in", overwrite:"auto"}, 3.100);
+    tl.set("#cap-3", {autoAlpha:0}, 3.221);
+    tl.to("#cw-3-0", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 2.970);
+    tl.fromTo("#cap-4", {xPercent:-50, autoAlpha:0, y:14, scale:0.96}, {xPercent:-50, autoAlpha:1, y:0, scale:1, duration:0.180, ease:"power2.out"}, 3.220);
+    tl.to("#cap-4", {autoAlpha:0, duration:0.120, ease:"power1.in", overwrite:"auto"}, 3.750);
+    tl.set("#cap-4", {autoAlpha:0}, 3.871);
+    tl.to("#cw-4-0", {color:"#38bdf8", scale:1.05, duration:0.095, ease:"power2.out", overwrite:"auto"}, 3.220);
+    tl.to("#cw-4-1", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 3.320);
+    tl.to("#cw-4-0", {color:"#ffffff", scale:1, duration:0.100, ease:"power2.out", overwrite:"auto"}, 3.320);
+    tl.fromTo("#cap-5", {xPercent:-50, autoAlpha:0, y:14, scale:0.96}, {xPercent:-50, autoAlpha:1, y:0, scale:1, duration:0.180, ease:"power2.out"}, 3.870);
+    tl.to("#cap-5", {autoAlpha:0, duration:0.120, ease:"power1.in", overwrite:"auto"}, 4.450);
+    tl.set("#cap-5", {autoAlpha:0}, 4.571);
+    tl.to("#cw-5-0", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 3.870);
+    tl.fromTo("#cap-6", {xPercent:-50, autoAlpha:0, y:14, scale:0.96}, {xPercent:-50, autoAlpha:1, y:0, scale:1, duration:0.180, ease:"power2.out"}, 4.570);
+    tl.to("#cap-6", {autoAlpha:0, duration:0.120, ease:"power1.in", overwrite:"auto"}, 5.880);
+    tl.set("#cap-6", {autoAlpha:0}, 6.001);
+    tl.to("#cw-6-0", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 4.570);
+    tl.to("#cw-6-1", {color:"#38bdf8", scale:1.05, duration:0.095, ease:"power2.out", overwrite:"auto"}, 5.070);
+    tl.to("#cw-6-0", {color:"#ffffff", scale:1, duration:0.095, ease:"power2.out", overwrite:"auto"}, 5.070);
+    tl.to("#cw-6-2", {color:"#38bdf8", scale:1.05, duration:0.100, ease:"power2.out", overwrite:"auto"}, 5.170);
+    tl.to("#cw-6-1", {color:"#ffffff", scale:1, duration:0.100, ease:"power2.out", overwrite:"auto"}, 5.170);
+    tl.set({}, {}, 6.0000);
+    window.__timelines["reel"] = tl;
+  })();
+</script>
+</body></html>

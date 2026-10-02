@@ -13,12 +13,26 @@ from procese.editare import scenariu as S  # noqa: E402
 from unelte import brand  # noqa: E402
 
 DATE = RAD / "tests" / "date" / "reel"
+MARTOR = RAD / "tests" / "date" / "compozitie" / "pagina-9x16.html"
+
+
+def pagina_din_date() -> str:
+    sc = json.loads((DATE / "scenariu.json").read_text(encoding="utf-8"))
+    ws = S.corecteaza(S.cuvinte(DATE / "transcript.json"), sc["corecturi"])
+    st = S.stil("studio")
+    plan = C.planifica(sc, ws, [2.8], 6.0, st)
+    cap_html, cap_js = C.captions(C.grupuri(ws, [2.8]), 6.0, st["accent"])
+    return C.pagina(sc, plan, cap_html, cap_js, 6.0)
 
 
 class TestCompozitie(unittest.TestCase):
     def setUp(self):
         self.sc = json.loads((DATE / "scenariu.json").read_text(encoding="utf-8"))
         self.ws = S.corecteaza(S.cuvinte(DATE / "transcript.json"), self.sc["corecturi"])
+
+    def test_pagina_de_reel_e_aceeasi_ca_inainte_de_piese(self):
+        # compoziția s-a despărțit în piese; un scenariu de reel scris pentru v1 trebuie să dea aceeași pagină, literă cu literă
+        self.assertEqual(pagina_din_date(), MARTOR.read_text(encoding="utf-8").replace("\r\n", "\n"))
 
     def test_sunetele_nu_se_repeta_si_nu_se_calca(self):
         s = C.Sunete()
