@@ -3,8 +3,9 @@
 Kitul e baza: instalarea, procesul, tăietura, subtitrările, cardurile, sunetul și verificarea. Animațiile, culorile și efectele
 tale le construiești peste ea, cu Claude. Sunt trei trepte, de la simplu la complex.
 
-Tot ce e al tău stă în două locuri pe care o actualizare a kitului (`git pull` sau o arhivă nouă) nu le atinge: `brand/` și
-`piese/ale-mele/`. Dacă schimbi direct fișierele kitului, actualizarea următoare poate intra în conflict cu ce ai schimbat.
+Tot ce e al tău stă în două locuri pe care o actualizare a kitului nu le atinge (`git pull`, sau o arhivă nouă dezarhivată
+peste același folder): `brand/` și `piese/ale-mele/`. Dacă schimbi direct fișierele kitului, actualizarea următoare poate intra
+în conflict cu ce ai schimbat.
 
 ## 1. Brandul
 
@@ -13,8 +14,12 @@ Tot ce e al tău stă în două locuri pe care o actualizare a kitului (`git pul
 
 ## 2. Stilul tău, peste al kitului
 
-Creezi `brand/stil.css`. Se încarcă ultimul, deci orice scrii acolo bate stilul kitului și culorile din brand. Îi poți cere lui
-Claude: „fă cardurile mai colțuroase și subtitrările galbene”, iar el scrie în fișierul ăsta.
+Creezi `brand/stil.css`. Se încarcă ultimul, după stilul kitului, culorile din brand și stilul pieselor, deci ce scrii acolo
+le bate pe toate. Îi poți cere lui Claude: „fă cardurile mai colțuroase și fundalul subtitrărilor mai închis”, iar el scrie în
+fișierul ăsta.
+
+Un singur lucru nu se schimbă de aici: culoarea cuvântului spus din subtitrări. O pune kitul, cuvânt cu cuvânt, din culoarea de
+accent a brandului; o schimbi din `/personalizare`.
 
 Ce poți schimba, pe nume:
 
@@ -36,8 +41,10 @@ card e socotită de kit (84 px pe 9:16, 72 px pe 16:9), deci dacă mărești mul
 O piesă e un efect pe care îl pui pe cuvintele tale: un cuvânt mare, o săgeată, o bară de progres, o imagine care apare.
 Îi spui lui Claude ce vrei să vezi, unde și pe ce cuvânt; el scrie piesa.
 
-**Unde stă:** un fișier în `piese/ale-mele/<nume>.py`. Modelul de la care pornești e `piese/cuvant.py` (piesa `cuvant` a
-kitului): îl copiezi sub alt nume și îl schimbi. O piesă a ta cu numele uneia din kit o înlocuiește.
+**Unde stă:** un fișier în `piese/ale-mele/<nume>.py` (numele: litere mici, cifre și `_`). Modelul de la care pornești e
+`piese/cuvant.py` (piesa `cuvant` a kitului): îl copiezi sub alt nume și îl schimbi. O piesă a ta numită tot `cuvant` o
+înlocuiește pe a kitului. Cardurile, titlul, subtitrările și zoomul sunt ale bazei: le schimbi înfățișarea din
+`brand/stil.css`, nu le înlocuiești de aici.
 
 **Cum o folosești:** din scenariu, la `"momente"`, în ordinea din video:
 
@@ -49,25 +56,35 @@ kitului): îl copiezi sub alt nume și îl schimbi. O piesă a ta cu numele unei
 ```
 
 **Regula.** O piesă are o singură funcție, `construieste(ctx, m)`, care întoarce un `Fragment` (HTML, CSS, linii de timeline,
-intervale). Ca să treacă prin aceleași verificări ca baza:
+intervale).
 
-1. Elementul ei de bază are id-ul `m-<id>` (id-ul momentului din scenariu) și clasa `piesa`; orice alt id începe cu `m-<id>-`.
-   Așa nu calcă niciun element al kitului. Compoziția oprește o piesă care nu respectă asta.
-2. Timpii vin din transcript: `ctx.ancora("cuvintele pe care intră")`. Niciodată secunde scrise de mână și niciodată sub zero
-   (o poziție negativă împinge toate animațiile videoului; compoziția o refuză).
-3. Fiecare element intră cu `tl.fromTo(...)`, cu starea de plecare scrisă. Fără `yoyo` sau `repeat` urmat de alt tween pe
-   același element: arată bine la previzualizare și greșit în mp4. Testul de ordine de dinaintea randării prinde asta.
-4. Piesa își declară intervalul (`intervale`, cu `"el": "m-<id>"`), ca să apară pe planșe și în tabelul de vizibilitate.
-5. Nimic important în zonele roșii de pe planșe, nimic peste față, nimic peste subtitrări.
-6. Sunetele se cer prin `ctx.sunete.adauga("pop", t)`: kitul are grijă să nu se calce și să nu se repete.
+Ce verifică kitul singur, și oprește compoziția dacă nu e așa:
+
+1. Elementul de bază al piesei are id-ul `m-<id>` (id-ul momentului din scenariu) și clasa `piesa`; orice alt id începe cu
+   `m-<id>-`. Așa nu calcă niciun element al kitului.
+2. Piesa își declară intervalul (`intervale`, cu `"el": "m-<id>"`): fără el n-ar apărea nici pe planșe, nici în tabelul de
+   vizibilitate.
+3. Niciun timp negativ, nici în interval, nici ca poziție pe timeline: o singură poziție negativă împinge toate animațiile
+   videoului.
+4. Ordinea: testul de dinaintea randării compară timeline-ul parcurs înainte cu cel parcurs amestecat. Un `yoyo` sau `repeat`
+   urmat de alt tween pe același element arată bine la previzualizare și greșit în mp4; aici se prinde.
+5. O piesă care pică, are o greșeală de scriere sau întoarce altceva decât un `Fragment` e oprită cu numele ei și cu motivul.
+
+Ce ține de tine și de Claude, și se vede pe planșe:
+
+- Timpii vin din transcript: `ctx.ancora("cuvintele pe care intră")`, nu secunde scrise de mână. Tăietura se schimbă de la un
+  draft la altul, iar secundele scrise de mână rămân în urmă.
+- Fiecare element intră cu `tl.fromTo(...)`, cu starea de plecare scrisă.
+- Nimic important în zonele roșii, nimic peste față, nimic peste subtitrări.
+- Sunetele se cer prin `ctx.sunete.adauga("pop", t)`: kitul are grijă să nu se calce și să nu se repete.
 
 **Ce primești în `ctx`:** `ctx.ws` (cuvintele cu timpi), `ctx.cuts` (tăieturile), `ctx.durata`, `ctx.format` (`"9:16"` sau
 `"16:9"`), `ctx.st` (culorile stilului: `accent`, `accent_rgb`), `ctx.sc` (scenariul), `ctx.ancora(fraza)`, `ctx.sunete`.
 În CSS folosești culorile brandului: `var(--accent)`, `var(--accent-2)`, `var(--font-display)`.
 
-**Cum se verifică:** la fel ca orice video. `compozitie.py` oprește id-urile greșite și pozițiile negative; `planse.py` îți
-arată piesa în cadru, cu zonele acoperite; `randeaza.py` rulează întâi testul de ordine, apoi verifică mp4-ul. Un draft care pică
-nu se livrează, fie că piesa e a kitului sau a ta.
+**Cum se verifică:** la fel ca orice video. `compozitie.py` face verificările 1, 2, 3 și 5; `planse.py` îți arată piesa în
+cadru, cu zonele acoperite; `randeaza.py` rulează întâi testul de ordine, apoi verifică mp4-ul. Un draft care pică nu se
+livrează, fie că piesa e a kitului sau a ta.
 
 ## Mai departe
 

@@ -51,6 +51,8 @@ class TestSkilluri(unittest.TestCase):
         for x in ("brand/stil.css", "piese/ale-mele/", "construieste(ctx, m)", "m-<id>", "ctx.ancora", "piese/cuvant.py", '"momente"',
                   "planșe", "git pull"):
             self.assertIn(x, ext)
+        self.assertNotIn("subtitrările galbene", ext)     # culoarea cuvântului spus o pune kitul din accent, nu se schimbă din CSS
+        self.assertIn("peste același folder", ext)         # o arhivă dezarhivată în alt folder nu are brandul și piesele omului
         piese = (RAD / "docs" / "PIESE.md").read_text(encoding="utf-8")
         self.assertIn("docs/EXTINDERE.md", piese)
         self.assertIn("`cuvant`", piese)

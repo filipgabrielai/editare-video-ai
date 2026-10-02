@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import piese  # noqa: E402
 from piese import card, titlu, zoom  # noqa: E402
 from piese.card import INALTIME_RAND  # noqa: E402,F401
-from piese.comun import FPS, MIN_PAUZA, ROT, VOL, Context, Sunete  # noqa: E402,F401
+from piese.comun import FPS, MIN_PAUZA, ROT, VOL, Context, Fragment, Sunete  # noqa: E402,F401
 from piese.subtitrari import MAX_CAR, captions, grupuri  # noqa: E402,F401
 from procese.editare import scenariu as S  # noqa: E402
 from unelte import brand, formate, hyperframes, platforma, proiect  # noqa: E402
@@ -60,13 +60,28 @@ def planifica(sc: dict, ws: list[dict], cuts: list[float], durata: float, st: di
 def moment(ctx: Context, m: dict):
     """Fragmentul unui moment din scenariu. Regula pieselor: rădăcina are id-ul m-<id> și clasa „piesa”, iar toate celelalte
     id-uri încep cu m-<id>-. Așa o piesă a omului nu poate călca un element al kitului (un al doilea „titlu” ar fi animat
-    de tween-urile titlului), iar testul de ordine și planșele o găsesc."""
-    f = piese.incarca(m["piesa"]).construieste(ctx, m)
+    de tween-urile titlului), iar testul de ordine și planșele o găsesc. O piesă care pică, întoarce altceva decât un
+    Fragment sau nu-și declară intervalul e oprită aici, cu numele ei, nu cu un traceback."""
+    nume = m["piesa"]
+    modul = piese.incarca(nume)
+    try:
+        f = modul.construieste(ctx, m)
+    except SystemExit:
+        raise
+    except Exception as e:
+        raise SystemExit(f"Piesa „{nume}” a picat la momentul „{m['id']}”: {type(e).__name__}: {e}. Modelul e piese/cuvant.py.") from None
+    if not isinstance(f, Fragment):
+        raise SystemExit(f"Piesa „{nume}”: construieste(ctx, m) trebuie să întoarcă un Fragment (din piese.comun), nu "
+                         f"{type(f).__name__}. Modelul e piese/cuvant.py.")
+    if not f.intervale or any(not isinstance(i, dict) or i.get("intra", 0) < 0 for i in f.intervale):
+        raise SystemExit(f"Piesa „{nume}” (momentul „{m['id']}”) trebuie să-și declare intervalul în „intervale” (id, intra ≥ 0, "
+                         "iese, el): altfel nu apare nici pe planșe, nici în tabelul de vizibilitate. Modelul e piese/cuvant.py.")
     mid = f"m-{m['id']}"
     html = "".join(f.html)
-    straine = [i for i in re.findall(r'\bid="([^"]*)"', html) if i != mid and not i.startswith(mid + "-")]
-    radacina = re.search(rf'<[^>]*\bid="{re.escape(mid)}"[^>]*>', html)
-    if straine or not radacina or not re.search(r'\bclass="[^"]*\bpiesa\b', radacina.group(0)):
+    ID = r"""(?<![\w-])id\s*=\s*["']([^"']*)["']"""    # id="x" sau id='x', dar nu data-id
+    straine = [i for i in re.findall(ID, html) if i != mid and not i.startswith(mid + "-")]
+    radacina = re.search(rf"""<[^>]*(?<![\w-])id\s*=\s*["']{re.escape(mid)}["'][^>]*>""", html)
+    if straine or not radacina or not re.search(r"""\bclass\s*=\s*["'][^"']*\bpiesa\b""", radacina.group(0)):
         raise SystemExit(f"Piesa „{m['piesa']}” (momentul „{m['id']}”): elementul ei de bază trebuie să aibă id=\"{mid}\" și clasa "
                          f"„piesa”, iar celelalte id-uri să înceapă cu {mid}-" + (f" (am găsit: {', '.join(straine)})" if straine else "")
                          + ". Vezi docs/EXTINDERE.md.")
@@ -76,7 +91,7 @@ def moment(ctx: Context, m: dict):
 def pozitii_negative(linii: list[str]) -> list[str]:
     """Liniile de timeline puse înainte de zero. Una singură ajunge ca GSAP să împingă tot timeline-ul cu atât: animațiile cad
     apoi după imagine și după sunet, cu un cadru sau două."""
-    return [x for x in linii if re.search(r",\s*-\d[\d.]*\);\s*$", x)]
+    return [x for intrare in linii for x in intrare.splitlines() if re.search(r",\s*-\d[\d.]*\)\s*;?\s*$", x)]
 
 
 def aplica_preferinte(plan: dict, cap: tuple[list[str], list[str]], b: dict) -> tuple[list[str], list[str]]:
@@ -109,9 +124,9 @@ def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata:
         st, dr = (f"{formate.MARGINE_CARD}px", "auto") if c["carduri"] == "stanga" else ("auto", f"{formate.MARGINE_CARD}px")
         pozitii = f"--carduri-y:{c['carduri_y']}px;--captions-y:{c['captions_y']}px;--compact-y:{compact_y}px;--card-st:{st};--card-dr:{dr}"
     ds = dur_str(durata)
-    in_plus = '\n<link rel="stylesheet" href="assets/stil-meu.css">' if stil_meu else ""   # stilul omului, peste brand
-    if plan.get("css"):                                                                     # stilul pieselor din momente
-        in_plus += "\n<style>\n" + "\n".join(plan["css"]) + "\n</style>"
+    in_plus = "\n<style>\n" + "\n".join(plan["css"]) + "\n</style>" if plan.get("css") else ""   # stilul pieselor din momente
+    if stil_meu:   # stilul omului vine ultimul: bate stilul kitului, brandul și piesele
+        in_plus += '\n<link rel="stylesheet" href="assets/stil-meu.css">'
     sfx = "\n".join(f'  <audio id="sfx-{i}" data-start="{t:.3f}" data-duration="{d:.3f}" data-track-index="{20 + i}" '
                     f'src="assets/sunete/{n}.wav" data-volume="{v}"></audio>' for i, (t, n, v, d) in enumerate(sorted(plan["sfx"])))
     linii_js = "\n".join("    " + x for x in plan["js"] + cap_js)

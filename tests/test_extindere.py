@@ -29,7 +29,7 @@ PIESA_RAU = '''from piese.comun import Fragment
 
 
 def construieste(ctx, m):
-    return Fragment(html=['<div id="titlu">peste titlul kitului</div>'])
+    return Fragment(html=['<div id="titlu">peste titlul kitului</div>'], intervale=[{"id": m["id"], "intra": 1, "iese": 2, "el": "titlu"}])
 '''
 
 
@@ -57,6 +57,8 @@ class TestExtindere(unittest.TestCase):
         p = C.pagina(self.sc, plan, [], [], 6.0)
         self.assertIn("<style>\n.sageata{position:absolute", p)
         self.assertLess(p.index('href="assets/brand.css"'), p.index("<style>"))   # piesele vin după stil și brand
+        cu_stil = C.pagina(self.sc, plan, [], [], 6.0, stil_meu=True)
+        self.assertLess(cu_stil.index("<style>"), cu_stil.index('href="assets/stil-meu.css"'))   # stilul omului bate și piesele
 
     def test_fara_momente_pagina_ramane_cea_dinainte(self):
         plan = C.planifica(self.sc, self.ws, [2.8], 6.0, S.stil("studio"))
@@ -70,6 +72,72 @@ class TestExtindere(unittest.TestCase):
             self.plan([{"piesa": "rau", "id": "x"}])
         self.assertIn("m-x", str(e.exception))
         self.assertIn("rau", str(e.exception))
+
+    def test_o_piesa_stricata_spune_ce_are_nu_da_traceback(self):
+        # omul își face prima piesă cu Claude: orice greșeală din ea trebuie spusă pe nume, cu fișierul și momentul
+        stricate = {
+            "pica": "def construieste(ctx, m):\n    raise ValueError('ceva')\n",
+            "nimic": "def construieste(ctx, m):\n    return None\n",
+            "dict": "def construieste(ctx, m):\n    return {'html': []}\n",
+            "sintaxa": "def construieste(ctx, m)\n    return 1\n",
+            "veche": "from piese.comun import Fragment\ndef construieste(ctx):\n    return Fragment()\n",
+            "import_rau": "import nu_exista_asa_ceva\ndef construieste(ctx, m):\n    return 1\n",
+        }
+        for nume, cod in stricate.items():
+            (self.ale / f"{nume}.py").write_text(cod, encoding="utf-8")
+            with self.assertRaises(SystemExit, msg=nume) as e:
+                self.plan([{"piesa": nume, "id": "x"}])
+            self.assertIn(f"„{nume}”", str(e.exception), nume)
+            self.assertIn("piese/cuvant.py", str(e.exception), nume)
+
+    def test_piesa_isi_declara_intervalul(self):
+        # fără interval, piesa nu apare nici pe planșe, nici în tabelul de vizibilitate: nimeni n-ar vedea-o înainte de randare
+        (self.ale / "muta.py").write_text('from piese.comun import Fragment\n\n\ndef construieste(ctx, m):\n'
+                                           '    return Fragment(html=[f\'<div class="piesa" id="m-{m["id"]}"></div>\'])\n', encoding="utf-8")
+        with self.assertRaises(SystemExit) as e:
+            self.plan([{"piesa": "muta", "id": "x"}])
+        self.assertIn("intervale", str(e.exception))
+
+    def test_regula_id_urilor_pe_ghilimele_simple_si_data_id(self):
+        baza = "from piese.comun import Fragment\n\n\ndef construieste(ctx, m):\n    return Fragment(html=[%r], intervale=[{'id': m['id'], 'intra': 1, 'iese': 2, 'el': 'm-' + m['id']}])\n"
+        (self.ale / "simple.py").write_text(baza % """<div class='piesa' id='m-x'><i id='titlu'></i></div>""", encoding="utf-8")
+        with self.assertRaises(SystemExit) as e:
+            self.plan([{"piesa": "simple", "id": "x"}])
+        self.assertIn("titlu", str(e.exception))
+        (self.ale / "date.py").write_text(baza % """<div class="piesa" id="m-x" data-id="abc"></div>""", encoding="utf-8")
+        self.assertIn('data-id="abc"', "".join(self.plan([{"piesa": "date", "id": "x"}])["html"]))   # data-id nu e id
+
+    def test_cuvantul_cu_durata_scrisa_gresit(self):
+        with self.assertRaises(SystemExit) as e:
+            self.plan([{"piesa": "cuvant", "id": "w", "text": "a", "ancora": "cât de productiv", "durata": "mult"}])
+        self.assertIn("durata", str(e.exception))
+
+    def test_momentele_scrise_gresit_spun_ce_au(self):
+        erori, _ = S.valideaza({**self.sc, "momente": ["cuvant", {"id": "x"}, {"piesa": "card", "id": "y"}]})
+        self.assertTrue(any("nu e un obiect" in e for e in erori))
+        self.assertTrue(any("nu are „piesa”" in e for e in erori))
+        self.assertTrue(any("„card”" in e and "carduri" in e for e in erori))   # cardurile au locul lor în scenariu
+        self.assertFalse(any("None" in e for e in erori))
+
+    def test_doar_piesele_adevarate_sunt_listate(self):
+        for f in ("__init__.py", "Test.py", "o-piesa.py", "sageata.py"):
+            (self.ale / f).write_text(PIESA_MEA, encoding="utf-8")
+        self.assertEqual(piese.disponibile(), ["cuvant", "sageata"])
+        (self.ale / "card.py").write_text(PIESA_MEA, encoding="utf-8")       # nu înlocuiește cardurile kitului
+        self.assertNotIn("card", piese.disponibile())
+
+    def test_pozitia_negativa_e_prinsa_si_pe_mai_multe_linii(self):
+        self.assertEqual(len(C.pozitii_negative(['tl.to("#a", {x:1}, 0.5);\ntl.to("#a", {x:2}, -0.5);', 'tl.to("#b", {x:1}, -0.25)'])), 2)
+
+    def test_ce_e_al_omului_nu_e_urmarit_de_git(self):
+        # git aruncă fără avertisment un fișier ignorat când kitul începe să urmărească același nume: în folderele omului
+        # kitul nu ține nimic în afară de .gitkeep
+        import shutil
+        import subprocess
+        if not shutil.which("git") or not (RAD / ".git").exists():
+            self.skipTest("nu e un repo git")
+        r = subprocess.run(["git", "ls-files", "piese/ale-mele", "brand"], cwd=RAD, capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(sorted(r.stdout.split()), ["brand/.gitkeep", "piese/ale-mele/.gitkeep"])
 
     def test_piesa_care_lipseste_spune_unde_se_scrie(self):
         erori, _ = S.valideaza({**self.sc, "momente": [{"piesa": "confetti", "id": "c1"}]})
@@ -125,6 +193,7 @@ class TestExtindere(unittest.TestCase):
             self.assertEqual((Path(d) / "assets" / "stil-meu.css").read_text(encoding="utf-8"), ".card{border-radius:8px}")
             p = C.pagina(self.sc, plan, [], [], 6.0, stil_meu=C.stil_meu())
             self.assertLess(p.index('href="assets/brand.css"'), p.index('href="assets/stil-meu.css"'))
+            self.assertTrue(p.split("</head>")[0].rstrip().endswith('href="assets/stil-meu.css">'))   # ultimul din <head>
 
     def test_piesele_omului_se_vad_in_tabelul_de_vizibilitate(self):
         rez = {"ndif": 0, "dif": [], "viz": {"m-s1": [[2.0, 9.0]]}}

@@ -164,8 +164,17 @@ def _momente(momente) -> list[str]:
         return ["momente e o listă: [{\"piesa\": \"cuvant\", \"id\": \"...\", ...}]"]
     erori, vazute = [], set()
     for m in momente:
-        nume, mid = (m.get("piesa"), m.get("id")) if isinstance(m, dict) else (None, None)
-        if not piese.nume_bun(nume):
+        if not isinstance(m, dict):
+            erori.append(f"un moment din „momente” nu e un obiect {{\"piesa\": ..., \"id\": ...}} (am găsit: {m!r})")
+            continue
+        nume, mid = m.get("piesa"), m.get("id")
+        if not nume:
+            erori.append(f"momentul „{mid or '?'}” nu are „piesa” (numele piesei: una din {', '.join(piese.disponibile())})")
+            continue
+        if nume in piese.DE_BAZA:
+            erori.append(f"piesa „{nume}” e a bazei și are locul ei în scenariu (cardurile la „carduri”, titlul la „titlu”); la "
+                         f"momente pui {', '.join(piese.disponibile())} sau o piesă a ta, cu alt nume")
+        elif not piese.nume_bun(nume):
             erori.append(f"momentul cu piesa „{nume}”: numele piesei are doar litere mici, cifre și _ (e numele fișierului ei)")
         elif nume not in piese.disponibile():
             erori.append(f"piesa „{nume}” nu există (sunt: {', '.join(piese.disponibile())}); una nouă se scrie în "

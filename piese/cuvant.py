@@ -17,6 +17,13 @@ CSS = (".cuvant{position:absolute;z-index:25;opacity:0;white-space:nowrap;font-w
        "color:var(--accent);text-shadow:0 6px 30px rgba(0,0,0,.6)}")
 
 
+def numar(m: dict, cheie: str, implicit: float) -> float:
+    v = m.get(cheie, implicit)
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        raise SystemExit(f"Momentul „{m['id']}” (piesa cuvant): „{cheie}” e un număr (am primit „{v}”).")
+    return v
+
+
 def construieste(ctx: Context, m: dict) -> Fragment:
     for cheie in ("text", "ancora"):
         if not m.get(cheie):
@@ -25,9 +32,9 @@ def construieste(ctx: Context, m: dict) -> Fragment:
     x, y, marime = LOC[ctx.format]
     if ctx.format == "16:9" and ctx.sc.get("cadru", {}).get("carduri", "stanga") == "dreapta":
         x = formate.dimensiuni("16:9")[0] - x
-    x, y, marime = m.get("x", x), m.get("y", y), m.get("marime", marime)
+    x, y, marime = numar(m, "x", x), numar(m, "y", y), numar(m, "marime", marime)
     t0 = max(0.0, ctx.ancora(m["ancora"]) - 0.03)   # timpii vin din transcript și nu coboară sub zero
-    t1 = ctx.ancora(m["pana_la"]) if m.get("pana_la") else t0 + float(m.get("durata", 1.5))
+    t1 = ctx.ancora(m["pana_la"]) if m.get("pana_la") else t0 + numar(m, "durata", 1.5)
     t1 = min(max(t1, t0 + 0.7), ctx.durata)         # intrarea (0,35 s) și ieșirea (0,2 s) nu se calcă
     ctx.sunete.adauga("pop", t0)
     return Fragment(

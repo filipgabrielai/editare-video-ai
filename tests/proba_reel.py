@@ -16,7 +16,7 @@ from pathlib import Path
 
 RAD = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAD))
-from procese.editare import compozitie, cuvinte, duble, randeaza, taietura  # noqa: E402
+from procese.editare import compozitie, cuvinte, duble, randeaza, scenariu, taietura  # noqa: E402
 from unelte import formate, platforma, proiect  # noqa: E402
 
 NUME = "proba reel automata"
@@ -73,7 +73,8 @@ def pasi(folder: Path, dosar: Path, nume: str, filmare: str) -> int:
     print("3/5 Tăietura...")
     taietura.main([str(dosar), "--filmare", filmare])
     cadru = {"shift": 120, "carduri_y": 280, "captions_y": 1480} if filmare == "9:16" else {"carduri": "dreapta"}
-    primul = json.loads((dosar / "transcript.json").read_text(encoding="utf-8"))["words"][0]["text"]
+    cuvintele = json.loads((dosar / "transcript.json").read_text(encoding="utf-8"))["words"]
+    primul = next(w["text"] for w in cuvintele if scenariu.norm(w["text"]))   # modelul mic poate începe cu un semn
     scrie_json(dosar / "scenariu.json", {"stil": "studio", "format": filmare, "cadru": cadru,
                                          "carduri": [{"id": "proba", "ancora": "start", "kicker": "PROBĂ",
                                                       "randuri": [{"text": "editare în **română**", "icoana": "check"}]}],
