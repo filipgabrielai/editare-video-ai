@@ -18,6 +18,7 @@ from unelte import hyperframes, platforma  # noqa: E402
 
 SCRIPT = Path(__file__).with_suffix(".cjs")
 MARJA_INTRARE, MARJA_IESIRE = 0.3, 0.6   # cardul iese în 0,28 s; măsurătoarea merge din 0,1 în 0,1 s
+SELECTOR = ".card, #titlu, .piesa"       # ce se urmărește în tabelul de vizibilitate: cardurile, titlul și piesele din momente
 
 
 def browser() -> str | None:
@@ -30,7 +31,7 @@ def browser() -> str | None:
     return cale if r.returncode == 0 and cale and Path(cale).is_file() else None
 
 
-def masoara(pagina: Path, selector: str = ".card, #titlu") -> dict:
+def masoara(pagina: Path, selector: str = SELECTOR) -> dict:
     exe = browser()
     if not exe:
         hyperframes.ruleaza(["browser", "ensure"], timeout=1800)
@@ -56,13 +57,14 @@ def probleme(rez: dict, intervale: list[dict]) -> list[str]:
         out.append(f"{rez['ndif']} diferențe între parcurgerea înainte și cea amestecată, la: {', '.join(care)}. "
                    "Un tween depinde de ce a rulat înaintea lui (yoyo sau repeat urmat de overwrite pe același element)")
     for iv in intervale:
-        v = rez["viz"].get(f"c-{iv['id']}")
+        v = rez["viz"].get(iv.get("el", f"c-{iv['id']}"))   # piesele din momente își spun elementul; cardurile sunt c-<id>
+        ce = "piesa" if "el" in iv else "cardul"
         if v is None:
             continue
         if not v:
-            out.append(f"cardul „{iv['id']}” nu apare deloc pe ecran")
+            out.append(f"{ce} „{iv['id']}” nu apare deloc pe ecran")
         elif v[0][0] < iv["intra"] - MARJA_INTRARE or v[-1][1] > iv["iese"] + MARJA_IESIRE:
-            out.append(f"cardul „{iv['id']}” se vede între {v[0][0]:.1f} și {v[-1][1]:.1f} s, dar e plănuit între "
+            out.append(f"{ce} „{iv['id']}” se vede între {v[0][0]:.1f} și {v[-1][1]:.1f} s, dar e plănuit între "
                        f"{iv['intra']:.1f} și {iv['iese']:.1f} s")
     return out
 

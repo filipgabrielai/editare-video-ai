@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+import piese  # noqa: E402
 from piese import card, titlu, zoom  # noqa: E402
 from piese.card import INALTIME_RAND  # noqa: E402,F401
 from piese.comun import FPS, MIN_PAUZA, ROT, VOL, Context, Sunete  # noqa: E402,F401
@@ -45,11 +46,31 @@ def logouri_lipsa(sc: dict, logouri: dict[str, str]) -> list[str]:
 
 def planifica(sc: dict, ws: list[dict], cuts: list[float], durata: float, st: dict, logouri: dict[str, str] | None = None,
               logo_brand: str = "", fmt: str = formate.IMPLICIT) -> dict:
-    """Piesele compoziției, în ordinea în care se așază pe timeline: zoomul la tăieturi, titlul, cardurile."""
+    """Piesele compoziției, în ordinea în care se așază pe timeline: zoomul la tăieturi, titlul, cardurile, apoi momentele
+    (piesele puse din scenariu, ale kitului sau ale omului)."""
     ctx = Context(sc=sc, ws=ws, cuts=cuts, durata=durata, st=st, logouri=logouri or {}, logo_brand=logo_brand, format=fmt)
     fr = [p.construieste(ctx) for p in (zoom, titlu, card)]
+    ctx.cursor = 0.0   # ancorele momentelor se caută de la început, în ordinea în care sunt scrise
+    fr += [moment(ctx, m) for m in sc.get("momente", [])]
     return {"html": [x for f in fr for x in f.html], "js": [x for f in fr for x in f.js], "sfx": ctx.sunete.lista,
-            "beats": [x for f in fr for x in f.beats], "intervale": [x for f in fr for x in f.intervale]}
+            "beats": [x for f in fr for x in f.beats], "intervale": [x for f in fr for x in f.intervale],
+            "css": list(dict.fromkeys(x for f in fr for x in f.css))}
+
+
+def moment(ctx: Context, m: dict):
+    """Fragmentul unui moment din scenariu. Regula pieselor: rădăcina are id-ul m-<id> și clasa „piesa”, iar toate celelalte
+    id-uri încep cu m-<id>-. Așa o piesă a omului nu poate călca un element al kitului (un al doilea „titlu” ar fi animat
+    de tween-urile titlului), iar testul de ordine și planșele o găsesc."""
+    f = piese.incarca(m["piesa"]).construieste(ctx, m)
+    mid = f"m-{m['id']}"
+    html = "".join(f.html)
+    straine = [i for i in re.findall(r'\bid="([^"]*)"', html) if i != mid and not i.startswith(mid + "-")]
+    radacina = re.search(rf'<[^>]*\bid="{re.escape(mid)}"[^>]*>', html)
+    if straine or not radacina or not re.search(r'\bclass="[^"]*\bpiesa\b', radacina.group(0)):
+        raise SystemExit(f"Piesa „{m['piesa']}” (momentul „{m['id']}”): elementul ei de bază trebuie să aibă id=\"{mid}\" și clasa "
+                         f"„piesa”, iar celelalte id-uri să înceapă cu {mid}-" + (f" (am găsit: {', '.join(straine)})" if straine else "")
+                         + ". Vezi docs/EXTINDERE.md.")
+    return f
 
 
 def pozitii_negative(linii: list[str]) -> list[str]:
@@ -72,7 +93,13 @@ def mesaj_lint(ok: bool, iesire: str) -> str:
     return iesire.splitlines()[-1] if ok else iesire
 
 
-def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata: float, fmt: str = formate.IMPLICIT) -> str:
+def stil_meu() -> bool:
+    """Omul are un stil al lui peste al kitului: brand/stil.css."""
+    return (brand.BRAND / "stil.css").is_file()
+
+
+def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata: float, fmt: str = formate.IMPLICIT,
+           stil_meu: bool = False) -> str:
     w, h = formate.dimensiuni(fmt)
     c = {**formate.CADRU[fmt], **({"carduri_y": formate.CARDURI_Y_CU_TITLU[fmt]} if sc.get("titlu") else {}), **sc.get("cadru", {})}
     compact_y = formate.COMPACT_Y[fmt][1 if sc.get("titlu") else 0]   # cu titlu, cardul compact stă sub el
@@ -82,6 +109,9 @@ def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata:
         st, dr = (f"{formate.MARGINE_CARD}px", "auto") if c["carduri"] == "stanga" else ("auto", f"{formate.MARGINE_CARD}px")
         pozitii = f"--carduri-y:{c['carduri_y']}px;--captions-y:{c['captions_y']}px;--compact-y:{compact_y}px;--card-st:{st};--card-dr:{dr}"
     ds = dur_str(durata)
+    in_plus = '\n<link rel="stylesheet" href="assets/stil-meu.css">' if stil_meu else ""   # stilul omului, peste brand
+    if plan.get("css"):                                                                     # stilul pieselor din momente
+        in_plus += "\n<style>\n" + "\n".join(plan["css"]) + "\n</style>"
     sfx = "\n".join(f'  <audio id="sfx-{i}" data-start="{t:.3f}" data-duration="{d:.3f}" data-track-index="{20 + i}" '
                     f'src="assets/sunete/{n}.wav" data-volume="{v}"></audio>' for i, (t, n, v, d) in enumerate(sorted(plan["sfx"])))
     linii_js = "\n".join("    " + x for x in plan["js"] + cap_js)
@@ -90,7 +120,7 @@ def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata:
 <script src="assets/gsap.min.js"></script>
 <link rel="stylesheet" href="assets/fonturi/fonturi.css">
 <link rel="stylesheet" href="assets/stil.css">
-<link rel="stylesheet" href="assets/brand.css">
+<link rel="stylesheet" href="assets/brand.css">{in_plus}
 </head><body>
 <div id="reel" data-composition-id="reel" data-start="0" data-duration="{ds}" data-width="{w}" data-height="{h}"
   style="{pozitii}">
@@ -139,6 +169,9 @@ def pregateste_assets(dosar: Path, stil: str, b: dict | None = None, fmt: str = 
             if f.is_file():
                 shutil.copy(f, a / "logo" / f.name)
     (a / "brand.css").write_text(brand.css(b), encoding="utf-8")
+    (a / "stil-meu.css").unlink(missing_ok=True)
+    if stil_meu():
+        shutil.copy(brand.BRAND / "stil.css", a / "stil-meu.css")
     brand.copiaza(b, a)
 
 
@@ -193,7 +226,7 @@ def main(argv: list[str] | None = None) -> int:
     if (negative := pozitii_negative(plan["js"] + cap_js)):
         print("eroare: animații puse înainte de secunda zero (ar împinge tot timeline-ul):\n  " + "\n  ".join(negative[:5]))
         return 1
-    (dosar / "index.html").write_text(pagina(sc, plan, cap_html, cap_js, durata, fmt), encoding="utf-8")
+    (dosar / "index.html").write_text(pagina(sc, plan, cap_html, cap_js, durata, fmt, stil_meu()), encoding="utf-8")
     with open(dosar / "intervale.json", "w", encoding="utf-8") as f:
         json.dump(plan["intervale"], f, indent=1)
     beats = ["# Beat-uri", "", "| t | ce apare |", "|---|---|"] + [f"| {t:.2f} | {x} |" for t, x in plan["beats"]]

@@ -2,21 +2,20 @@
 
 O piesă e un efect testat, pe care Claude îl pune pe cuvintele tale din scenariu. Codul lor e în `piese/`.
 
-| Piesa | Ce face | Ce trebuie filmat | Formate | Sisteme |
+| Piesa | Ce face | Unde o scrii în scenariu | Formate | Sisteme |
 |---|---|---|---|---|
-| `card` | card cu rânduri, chipuri sau o cifră, care intră pe un cuvânt | nimic în plus | 9:16 (deasupra capului), 16:9 (lângă tine) | Mac, Windows |
-| `subtitrari` | subtitrări cuvânt cu cuvânt, cuvântul spus e colorat | nimic în plus | 9:16, 16:9 | Mac, Windows |
-| `titlu` | titlul care stă sus tot videoul | nimic în plus | 9:16, 16:9 | Mac, Windows |
-| `zoom` | zoom ușor la fiecare tăietură | nimic în plus | 9:16, 16:9 | Mac, Windows |
+| `card` | card cu rânduri, chipuri sau o cifră, care intră pe un cuvânt | `carduri` | 9:16 (deasupra capului), 16:9 (lângă tine) | Mac, Windows |
+| `subtitrari` | subtitrări cuvânt cu cuvânt, cuvântul spus e colorat | singure, din transcript | 9:16, 16:9 | Mac, Windows |
+| `titlu` | titlul care stă sus tot videoul | `titlu` | 9:16, 16:9 | Mac, Windows |
+| `zoom` | zoom ușor la fiecare tăietură | singur, la tăieturi | 9:16, 16:9 | Mac, Windows |
+| `cuvant` | un cuvânt mare care apare pe o ancoră; e și modelul pentru piesele tale | `momente` | 9:16, 16:9 | Mac, Windows |
 
-## Ce nu e încă în kit
+Pentru niciuna nu trebuie filmat nimic în plus.
 
-Efectele mari vin pe rând, fiecare ca piesă testată pe Mac și pe Windows:
+## Piesele tale
 
-- text în spatele tău (tu decupat de pe fundal);
-- ecran împărțit: sus montajul, jos filmarea originală;
-- cadrul strâns într-un panou, cu explicația lângă tine;
-- înregistrare de ecran cu zoom pe ce arăți;
-- obiect în palmă, care îți urmărește mâna.
+Kitul e baza. Animațiile și efectele tale le construiești peste ea, ca piese în `piese/ale-mele/`, și trec prin aceleași
+verificări ca piesele kitului. Cum, pas cu pas: `docs/EXTINDERE.md`.
 
-Până atunci, dacă ceri unul dintre ele, Claude îți spune că piesa nu e încă în kit și ce poate face acum în locul ei.
+Efectele mari (text în spatele tău, ecran împărțit, obiect în palmă) nu sunt în kit: sunt genul de lucruri pe care ți le
+construiești tu, cu Claude, pe baza asta.

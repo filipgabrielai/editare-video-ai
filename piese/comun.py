@@ -1,5 +1,6 @@
 """Ce împart piesele unei compoziții: contextul (cuvintele, tăieturile, stilul, formatul, sunetele) și forma fragmentului pe
-care îl întoarce fiecare. O piesă e un modul cu `construieste(ctx) -> Fragment`."""
+care îl întoarce fiecare. O piesă e un modul cu `construieste(ctx) -> Fragment`; cele puse din "momente" primesc și momentul:
+`construieste(ctx, m)`."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -48,6 +49,7 @@ class Fragment:
     js: list[str] = field(default_factory=list)
     beats: list[tuple[float, str]] = field(default_factory=list)
     intervale: list[dict] = field(default_factory=list)
+    css: list[str] = field(default_factory=list)
 
 
 @dataclass

@@ -45,13 +45,30 @@ class TestSkilluri(unittest.TestCase):
         for x in ("--filmare 16:9", "retete/README.md", "docs/PROCES.md", "docs/PIESE.md", "Planul pe momente"):
             self.assertIn(x, usa)
 
-    def test_ce_nu_e_inca_in_kit_se_spune(self):
-        # cine vine din ghid nu trebuie să aștepte un efect și să primească altceva
+    def test_kitul_e_baza_iar_efectele_si_le_face_omul(self):
+        # Filip, 2 oct: kitul e structura și baza; animațiile, culorile și efectele și le face fiecare, cu Claude, peste ea
+        ext = (RAD / "docs" / "EXTINDERE.md").read_text(encoding="utf-8")
+        for x in ("brand/stil.css", "piese/ale-mele/", "construieste(ctx, m)", "m-<id>", "ctx.ancora", "piese/cuvant.py", '"momente"',
+                  "planșe", "git pull"):
+            self.assertIn(x, ext)
         piese = (RAD / "docs" / "PIESE.md").read_text(encoding="utf-8")
-        for x in ("text în spatele", "ecran împărțit", "obiect în palmă", "nu e încă în kit"):
-            self.assertIn(x, piese)
-        self.assertIn("nu e încă în kit", (RAD / ".claude" / "skills" / "editeaza" / "SKILL.md").read_text(encoding="utf-8"))
-        self.assertIn("docs/PIESE.md", (RAD / "README.md").read_text(encoding="utf-8"))
+        self.assertIn("docs/EXTINDERE.md", piese)
+        self.assertIn("`cuvant`", piese)
+        usa = (RAD / ".claude" / "skills" / "editeaza" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("docs/EXTINDERE.md", usa)
+        self.assertIn("piese/ale-mele/", usa)
+        readme = (RAD / "README.md").read_text(encoding="utf-8")
+        self.assertIn("docs/EXTINDERE.md", readme)
+        self.assertIn("## Cum îl faci al tău", readme)
+        for f in ("README.md", "CLAUDE.md", "docs/PIESE.md", "retete/README.md", ".claude/skills/editeaza/SKILL.md"):
+            text = (RAD / f).read_text(encoding="utf-8")
+            for promisiune in ("vin pe rând", "nu e încă în kit", "versiunile următoare", "versiune următoare"):
+                self.assertNotIn(promisiune, text, f)   # kitul nu promite efecte care nu vin
+
+    def test_piesele_omului_nu_intra_in_git(self):
+        ignorate = (RAD / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("piese/ale-mele/*", ignorate)
+        self.assertTrue((RAD / "piese" / "ale-mele" / ".gitkeep").is_file())
 
     def test_lectiile_de_taietura_sunt_in_pasii_de_reel(self):
         reel = (RAD / ".claude" / "skills" / "editeaza-reel" / "SKILL.md").read_text(encoding="utf-8")
@@ -68,7 +85,7 @@ class TestSkilluri(unittest.TestCase):
 
     def test_scenariul_spune_de_format(self):
         sc = (RAD / "docs" / "SCENARIU.md").read_text(encoding="utf-8")
-        for x in ('`format`', "--filmare", '„stanga”'):
+        for x in ('`format`', "--filmare", '„stanga”', '`momente`'):
             self.assertIn(x, sc)
 
 

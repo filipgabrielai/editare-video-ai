@@ -4,9 +4,9 @@ Kitul meu de editare video, în română, pe care îl rulezi în Claude Code: pu
 alege dublele, taie la cadru, pune cardurile, subtitrările și sunetele, și îți dă videoul verificat, în culorile și cu logoul tău.
 E construit pe ce am învățat editând peste 20 de videouri.
 
-**Ce face acum:** reeluri 9:16 (Instagram, TikTok, Shorts) și videouri orizontale 16:9 cu tine la cameră (YouTube, site,
-prezentări). Efectele mari (text în spatele tău, ecran împărțit, obiect în palmă) vin pe rând, ca piese; ce există e în
-`docs/PIESE.md`. Un reel clasic iese din una-două runde; un video cu efecte se face în conversație, draft cu draft.
+**Ce e:** baza unui sistem de editare, nu un editor cu toate efectele. Îți instalează ce trebuie, îți dă procesul pas cu pas
+(`docs/PROCES.md`) și scoate din prima un reel 9:16 sau un video orizontal 16:9 tăiat curat, cu subtitrări, carduri și sunete.
+Animațiile, culorile și efectele tale le construiești peste bază, cu Claude: `docs/EXTINDERE.md`.
 
 ## Înainte și după
 
@@ -42,6 +42,12 @@ Claude îl aduce, îi citește regulile și te duce prin instalare. De acolo con
 Te uiți pe draft și îi scrii ca unui editor: o schimbare pe rând, cu secunda și cu ce vrei să vezi, nu cum s-o facă.
 „La 0:14 e o pauză prea lungă.” „La 0:23 nu se aude finalul cuvântului.” „La final scrie «ei» în loc de «AI».”
 Claude repară, randează un draft nou și îl verifică din nou. FINAL se face doar când zici tu.
+
+## Cum îl faci al tău
+
+Trei trepte: brandul (`/personalizare`), stilul tău peste al kitului (`brand/stil.css`) și piesele tale, adică efectele pe care i le
+ceri lui Claude și pe care le pui pe cuvintele tale (`piese/ale-mele/`). Tot ce construiești trece prin aceleași verificări ca
+baza, iar o actualizare a kitului nu se atinge de ce e al tău. Pas cu pas: `docs/EXTINDERE.md`.
 
 ## Din sistemul tău de Claude Code
 

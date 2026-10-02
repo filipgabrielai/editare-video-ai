@@ -13,3 +13,5 @@ lucru-demo/
 exemple/demo-reel/clipuri/
 brand/*
 !brand/.gitkeep
+piese/ale-mele/*
+!piese/ale-mele/.gitkeep

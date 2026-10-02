@@ -10,5 +10,4 @@ video: ancorele scrise cu MAJUSCULE devin cuvinte din transcript, textele devin 
 | `orizontal-simplu` | video orizontal cu tine la cameră (YouTube, site, prezentare): cardul lângă tine, subtitrări pe piept | 16:9 | `taietura.py proiecte/<slug> --filmare 16:9` |
 
 Pe orizontală, rândurile de card au cel mult 24 de caractere, iar cardul stă pe partea liberă a cadrului (`cadru.carduri`:
-„stanga” sau „dreapta”). Efectele mari (text în spatele tău, ecran împărțit, obiect în palmă) vin ca piese în versiunile
-următoare; ce există acum e în `docs/PIESE.md`.
+„stanga” sau „dreapta”). Piesele kitului sunt în `docs/PIESE.md`; pe ale tale le construiești după `docs/EXTINDERE.md`.

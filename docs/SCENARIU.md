@@ -36,3 +36,7 @@ Claude scrie `proiecte/<slug>/scenariu.json` după ce citește transcriptul și 
 - `cifra`: `{"valoare": "80%", "ancora": "..."}`, o cifră mare.
 - `brand` (opțional, `true`): pe cardul de final; pune logoul tău (din `brand/brand.json`) lângă kicker.
 - `compact`: card mic la 262 px, pentru când pe ecran e o înregistrare de ecran (se vede mai mult din ea).
+- `momente` (opțional): piesele puse pe cuvinte, în ordinea din video. Fiecare are `piesa` (numele ei: una din kit, vezi
+  `docs/PIESE.md`, sau una a ta din `piese/ale-mele/`), un `id` și ce cere piesa. Exemplu, cuvântul mare al kitului:
+  `{"piesa": "cuvant", "id": "suta", "text": "100%", "ancora": "editat", "durata": 1.5}` (opțional `pana_la`, `x`, `y`, `marime`).
+  Cum îți faci propria piesă: `docs/EXTINDERE.md`.

@@ -153,4 +153,28 @@ def valideaza(sc: dict, fmt: str = formate.IMPLICIT) -> tuple[list[str], list[st
         for ch in c.get("chips", []):
             if not ch.get("text"):
                 erori.append(f"cardul „{cid}” are un chip fără text")
+    erori += _momente(sc.get("momente", []))
     return erori, avert
+
+
+def _momente(momente) -> list[str]:
+    """Momentele: piesele puse din scenariu, ale kitului sau ale omului (piese/ale-mele/)."""
+    import piese
+    if not isinstance(momente, list):
+        return ["momente e o listă: [{\"piesa\": \"cuvant\", \"id\": \"...\", ...}]"]
+    erori, vazute = [], set()
+    for m in momente:
+        nume, mid = (m.get("piesa"), m.get("id")) if isinstance(m, dict) else (None, None)
+        if not piese.nume_bun(nume):
+            erori.append(f"momentul cu piesa „{nume}”: numele piesei are doar litere mici, cifre și _ (e numele fișierului ei)")
+        elif nume not in piese.disponibile():
+            erori.append(f"piesa „{nume}” nu există (sunt: {', '.join(piese.disponibile())}); una nouă se scrie în "
+                         f"piese/ale-mele/{nume}.py, cum scrie în docs/EXTINDERE.md")
+        if not mid:
+            erori.append(f"un moment cu piesa „{nume}” nu are id")
+        elif not re.fullmatch(r"[a-z0-9-]+", str(mid)):
+            erori.append(f"momentul „{mid}”: id-ul are voie doar litere mici, cifre și cratimă")
+        elif mid in vazute:
+            erori.append(f"momentul „{mid}” apare de două ori")
+        vazute.add(mid)
+    return erori

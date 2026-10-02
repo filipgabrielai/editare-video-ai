@@ -34,7 +34,9 @@ videouri orizontale 16:9), cu procesul din acest kit, în brandul și cu preferi
 - Nimic tăiat în tăcere: la livrare spui ce ai scos în afară de reluări. Tăieturile de conținut se propun („pot scoate X,
   1,8 s”), nu se fac singure.
 - Pe 16:9, cardul stă lângă om, pe partea liberă, niciodată peste față; nimic important în marginea de 5 %.
-- Un efect care nu e în `docs/PIESE.md` nu se improvizează: îi spui omului că piesa nu e încă în kit și ce poți face acum.
+- Kitul e baza. Un efect care nu e în `docs/PIESE.md` se construiește ca piesă a omului (`piese/ale-mele/`, după
+  `docs/EXTINDERE.md`), nu se lipește de mână în `index.html`: așa trece prin aceleași verificări ca restul.
+- Ce e al omului stă în `brand/` și în `piese/ale-mele/`. Fișierele kitului nu le schimbi pentru un singur video.
 - FINAL doar după OK-ul omului.
 - Brandul și preferințele din `brand/brand.json` au prioritate peste stil; dacă fișierul lipsește la primul reel, propui `/personalizare`.
 

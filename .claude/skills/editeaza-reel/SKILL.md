@@ -45,6 +45,8 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
    („despre ei” → „despre AI”), niciodată „ei” singur, fiindcă e și cuvânt românesc. Cu `carduri: putine` în brand: hook,
    cel mult două carduri și finalul. Cardul de final (CTA) primește `"brand": true` (logoul lui lângă kicker, numele lui ca
    kicker dacă are); textul lui pornește de la `cta` din brand, adaptat la ce spune omul în clip.
+   Un efect în afara cardurilor (un cuvânt mare, o piesă a omului) se pune la `"momente"`; dacă nu există încă, îl construiești ca
+   piesă a lui, după `docs/EXTINDERE.md`.
 7. **Compoziția:** `python3 procese/editare/compozitie.py proiecte/<slug>`. Dacă dă erori, repari scenariul.
 8. **Planșele:** `python3 procese/editare/planse.py proiecte/<slug>` și citești fiecare foaie: nimic important în roșu, cardurile nu
    acoperă fața, textul nu iese din card, captions se citesc. Repari și reiei 7–8.

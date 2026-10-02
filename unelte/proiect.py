@@ -75,5 +75,5 @@ def format_proiect(dosar: Path, sc: dict | None = None) -> str:
     fmt = (sc or {}).get("format", filmare)
     if fmt != filmare:
         raise SystemExit(f"Scenariul cere {fmt}, dar tăietura e {filmare}. Refă tăietura cu --filmare {fmt}. "
-                         "(Filmarea pusă în panouri pe altă pânză vine într-o versiune următoare.)")
+                         "(Pânza și filmarea au același format.)")
     return fmt

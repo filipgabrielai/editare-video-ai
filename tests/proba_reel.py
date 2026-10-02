@@ -73,9 +73,12 @@ def pasi(folder: Path, dosar: Path, nume: str, filmare: str) -> int:
     print("3/5 Tăietura...")
     taietura.main([str(dosar), "--filmare", filmare])
     cadru = {"shift": 120, "carduri_y": 280, "captions_y": 1480} if filmare == "9:16" else {"carduri": "dreapta"}
+    primul = json.loads((dosar / "transcript.json").read_text(encoding="utf-8"))["words"][0]["text"]
     scrie_json(dosar / "scenariu.json", {"stil": "studio", "format": filmare, "cadru": cadru,
                                          "carduri": [{"id": "proba", "ancora": "start", "kicker": "PROBĂ",
-                                                      "randuri": [{"text": "editare în **română**", "icoana": "check"}]}]})
+                                                      "randuri": [{"text": "editare în **română**", "icoana": "check"}]}],
+                                         # o piesă pusă din scenariu, pe primul cuvânt: și ea trece prin ordine, randare și verificare
+                                         "momente": [{"piesa": "cuvant", "id": "proba", "text": "PROBĂ", "ancora": primul, "durata": 1.2}]})
     print("4/5 Compoziția...")
     if compozitie.main([str(dosar)]) != 0:
         return 1

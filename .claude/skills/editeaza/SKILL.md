@@ -13,9 +13,11 @@ Pe Mac folosești `python3`, pe Windows `python` (sau `py -3`). Dacă o comandă
 2. **Rețeta**, din `retete/README.md`:
    - reel cu omul la cameră: urmezi `/editeaza-reel`, pas cu pas;
    - video orizontal: pașii de mai jos, cu rețeta `orizontal-simplu`.
-3. **Ce cere și nu e încă în kit.** Piesele care există sunt în `docs/PIESE.md`. Dacă cere un efect care nu e acolo (text în
-   spatele lui, ecran împărțit, obiect în palmă), îi spui limpede: „piesa asta nu e încă în kit”, și ce poți face acum în locul
-   ei. Nu improvizezi un efect pe care nu-l poți verifica.
+3. **Ce cere și nu e în kit.** Piesele kitului sunt în `docs/PIESE.md`. Un efect care nu e acolo îl construiești ca piesă a
+   lui, după `docs/EXTINDERE.md`: un fișier în `piese/ale-mele/`, pus în scenariu la `"momente"`. Îi spui dinainte că e ceva
+   făcut pe măsură, deci ia câteva runde. Nu lipești efectul de mână în `index.html`: ca piesă, trece prin aceleași verificări
+   (id-uri, poziții pe timeline, ordine, planșe). La efectele care cer mai mult decât baza (decupaj de pe fundal, urmărirea
+   mâinii), îi spui cinstit ce presupun înainte să te apuci.
 4. **Baza**, la fel ca la reel (pașii 0–4 din `/editeaza-reel`): brandul, dublele, falsele starturi, cuvintele, tăietura,
    conținutul. La orizontală, tăietura e `python3 procese/editare/taietura.py proiecte/<slug> --filmare 16:9`. Dacă tăietura
    spune că un clip e filmat în altă orientare decât formatul cerut, te oprești și îl întrebi ce vrea.
