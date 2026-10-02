@@ -29,7 +29,7 @@ class TestCapete(unittest.TestCase):
         a0, a1 = T.capete(self.rms(1.0, 2.0), 1.02, 1.98, 0.0, 1e9)
         self.assertAlmostEqual(a0 * T.FPS, round(a0 * T.FPS), places=6)
         self.assertAlmostEqual(a1 * T.FPS, round(a1 * T.FPS), places=6)
-        self.assertTrue(0.9 <= a0 <= 0.97, a0)
+        self.assertTrue(0.96 <= a0 <= 0.99, a0)
         self.assertTrue(1.99 <= a1 <= 2.1, a1)
 
     def test_nu_trece_de_cuvantul_urmator(self):
@@ -42,7 +42,7 @@ class TestCapete(unittest.TestCase):
         prag = T.prag(rms)
         self.assertGreater(prag, -45.0)
         a0, a1 = T.capete(rms, 1.02, 1.98, 0.0, 1e9, prag)
-        self.assertTrue(0.9 <= a0 <= 0.97, a0)
+        self.assertTrue(0.96 <= a0 <= 0.99, a0)
         self.assertTrue(1.99 <= a1 <= 2.1, a1)
 
     def test_clicurile_de_buze_nu_sunt_vorbire(self):
@@ -53,13 +53,13 @@ class TestCapete(unittest.TestCase):
         for t in (2.10, 2.105):
             rms[round(t / T.PAS)] = -46.0
         a0, a1 = T.capete(rms, 0.95, 1.98, 0.0, 1e9)
-        self.assertTrue(0.9 <= a0 <= 0.97, a0)
+        self.assertTrue(0.96 <= a0 <= 0.99, a0)
         self.assertTrue(1.99 <= a1 <= 2.05, a1)
 
     def test_whisper_pune_cuvantul_prea_devreme(self):
         # Whisper a pus „Și” cu 150 ms înainte de sunet; căutarea se oprea acolo și lăsa 0,25 s de liniște la tăietură
         a0, _ = T.capete(self.rms(1.0, 2.0), 0.80, 1.98, 0.0, 1e9)
-        self.assertTrue(0.9 <= a0 <= 0.97, a0)
+        self.assertTrue(0.96 <= a0 <= 0.99, a0)
 
     def test_respiratia_inainte_de_cuvant_nu_e_vorbire(self):
         # „Și pe primul loc” (reelul „Top 3”): 80 ms de buze la −42 dB, apoi 0,35 s de liniște în care se uita în lateral, iar
@@ -68,7 +68,7 @@ class TestCapete(unittest.TestCase):
         for k in range(round(0.55 / T.PAS), round(0.63 / T.PAS)):
             rms[k] = -42.0
         a0, _ = T.capete(rms, 0.58, 1.98, 0.0, 1e9)
-        self.assertTrue(0.9 <= a0 <= 0.97, a0)
+        self.assertTrue(0.96 <= a0 <= 0.99, a0)
 
     def test_primul_cuvant_scurt_urmat_de_pauza_ramane(self):
         # „Și… pe primul loc”: un cuvânt scurt, spus la nivelul vorbirii, apoi o pauză, e vorbire și rămâne în bucată
@@ -76,7 +76,7 @@ class TestCapete(unittest.TestCase):
         for k in range(round(0.55 / T.PAS), round(0.65 / T.PAS)):
             rms[k] = -24.0
         a0, _ = T.capete(rms, 0.58, 1.98, 0.0, 1e9)
-        self.assertTrue(0.48 <= a0 <= 0.52, a0)
+        self.assertTrue(0.51 <= a0 <= 0.54, a0)
 
     def test_inceputul_nu_se_cauta_inaintea_cuvantului_anterior(self):
         # demo-ul pe copia 1080p: Whisper a pus „îți” cu 0,16 s înainte de sunet, căutarea a dat peste „repară” (cuvântul
@@ -85,13 +85,44 @@ class TestCapete(unittest.TestCase):
         for k in range(round(0.6 / T.PAS), round(0.85 / T.PAS)):
             rms[k] = -25.0
         a0, _ = T.capete(rms, 0.88, 1.98, 0.9, 1e9)
-        self.assertTrue(0.94 <= a0 <= 0.97, a0)
+        self.assertTrue(0.96 <= a0 <= 0.99, a0)
 
     def test_coada_lungeste_capatul_pe_grila_fara_sa_treaca_de_cuvantul_urmator(self):
         self.assertAlmostEqual(T.cu_coada(2.0, 0.1, 1e9), 2.1)
         self.assertAlmostEqual(T.cu_coada(2.0, 0.1, 2.05) * T.FPS, round(T.cu_coada(2.0, 0.1, 2.05) * T.FPS))
         self.assertLessEqual(T.cu_coada(2.0, 0.1, 2.05), 2.05)
         self.assertEqual(T.cu_coada(2.0, 0.0, 1e9), 2.0)
+
+    def test_pauza_dintre_fraze_e_cea_din_variantele_postate(self):
+        # pe filmarea reelului din 1 oct, cu 0,05 s înainte și coada lăsată liberă, fiecare îmbinare ieșea cu ~0,1 s mai largă
+        # decât în varianta postată de Filip (58,57 s față de 56,93 s): 0,02 s înainte de sunet și 0,03 s după
+        a0, a1 = T.capete(self.rms(1.0, 2.0), 1.02, 1.98, 0.0, 1e9)
+        self.assertTrue(0.97 <= a0 <= 0.99, a0)
+        self.assertTrue(2.02 <= a1 <= 2.04, a1)
+
+    def test_coada_de_sub_voce_intra_cel_mult_80_ms(self):
+        # după ultimul cuvânt rămâne ecou sau respirație la −46 dB, iar Whisper pune sfârșitul cuvântului cu 0,1 s mai târziu:
+        # capătul mergea pe toată coada. Sub −40 dB intră cel mult 0,08 s
+        rms = self.rms(1.0, 2.0)
+        for k in range(round(2.0 / T.PAS), round(2.3 / T.PAS)):
+            rms[k] = -46.0
+        _, a1 = T.capete(rms, 1.02, 2.10, 0.0, 1e9)
+        self.assertTrue(2.09 <= a1 <= 2.12, a1)
+
+    def test_nivelul_pe_5_ms_din_wav_pentru_capete(self):
+        # capetele se măsoară pe wav-ul de 16 kHz: la 8 kHz „s” și „ș” aproape nu se văd, iar cu 0,02 s în față s-ar pierde
+        import array, math, tempfile, wave
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "ton.wav"
+            a = array.array("h", [0] * 16000 + [int(3276.8 * math.sin(2 * math.pi * 6000 * i / 16000)) for i in range(16000)])
+            if sys.byteorder == "big":
+                a.byteswap()
+            with wave.open(str(f), "wb") as w:
+                w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(a.tobytes())
+            r = T.rms_wav(f, T.PAS)
+        self.assertEqual(len(r), 399)
+        self.assertLess(r[100], -80)
+        self.assertAlmostEqual(r[300], -23.0, delta=0.5)
 
     def test_in_liniste_pragul_ramane_minus_50(self):
         self.assertEqual(T.prag(self.rms(1.0, 2.0)), T.PRAG)
@@ -134,8 +165,8 @@ class TestStrans(unittest.TestCase):
 
     def test_capetele_normale_si_stranse(self):
         a0, a1, s_out = T.capete_bucata(0.95, 2.15, 0.0, 1e9, r10(), False, False)
-        self.assertAlmostEqual(a0, round(0.90 * T.FPS) / T.FPS)
-        self.assertAlmostEqual(a1, round(2.17 * T.FPS) / T.FPS)
+        self.assertAlmostEqual(a0, round(0.93 * T.FPS) / T.FPS)
+        self.assertAlmostEqual(a1, round(2.18 * T.FPS) / T.FPS)
         self.assertFalse(s_out)
         a0, a1, s_out = T.capete_bucata(0.95, 2.15, 0.0, 1e9, r10(), True, True)
         self.assertAlmostEqual(a0, round(0.96 * T.FPS) / T.FPS)
@@ -144,9 +175,10 @@ class TestStrans(unittest.TestCase):
 
     def test_plasa_de_siguranta_asculta_ultimul_cuvant(self):
         # sfârșitul strâns mânca „-ri” din „videoclipuri” (1 oct): dacă Whisper nu mai aude același cuvânt, rămâne sfârșitul normal
-        _, a1, s_out = T.capete_bucata(0.95, 2.15, 0.0, 1e9, r10(), False, True, lambda a, b: "și videoclipu", "videoclipuri.")
+        _, a1, s_out = T.capete_bucata(0.95, 2.15, 0.0, 1e9, r10(), False, True,
+                                       lambda a, b: "și videoclipuri" if b > 2.1 else "și videoclipu", "videoclipuri.")
         self.assertFalse(s_out)
-        self.assertAlmostEqual(a1, round(2.17 * T.FPS) / T.FPS)
+        self.assertAlmostEqual(a1, round(2.18 * T.FPS) / T.FPS)
         _, a1, s_out = T.capete_bucata(0.95, 2.15, 0.0, 1e9, r10(), False, True, lambda a, b: "Și Videoclipuri", "videoclipuri.")
         self.assertTrue(s_out)
         self.assertAlmostEqual(a1, round(2.04 * T.FPS) / T.FPS)
@@ -164,6 +196,28 @@ class TestStrans(unittest.TestCase):
         self.assertAlmostEqual(a0, round(1.00 * T.FPS) / T.FPS)    # primul cuvânt se aude: rămâne strâns
         a0, _, _ = T.capete_bucata(0.95, 2.15, 0.97, 1e9, r, True, False, lambda a, b: "Dacă vrei", "vrei.", "Și")
         self.assertAlmostEqual(a0, round(0.97 * T.FPS) / T.FPS)    # nici așa nu intră în cuvântul dinainte
+
+    def test_sfarsitul_slab_al_cuvantului_nu_se_pierde(self):
+        # demo-ul „Top 3”: „doar din prompturi”, cu „-uri” sub −40 dB; cu coada limitată la 0,08 s se auzea „prompt”.
+        # Când limita chiar scurtează bucata, bucata se ascultă; dacă ultimul cuvânt nu mai iese, rămâne toată coada
+        a0, a1, _ = T.capete_bucata(0.95, 2.08, 0.0, 1e9, None, False, False,
+                                    lambda a, b: "doar din prompturi" if b > 2.2 else "doar din prompt", "prompturi.", "doar", 2.25)
+        self.assertAlmostEqual(a1, round(2.28 * T.FPS) / T.FPS)
+        # Whisper aude la fel de greșit și bucata lungă („clode” în loc de „Claude”): nu e semn că s-a pierdut ceva
+        _, a1, _ = T.capete_bucata(0.95, 2.08, 0.0, 1e9, None, False, False, lambda a, b: "editat de clode", "Claude.", "editat", 2.25)
+        self.assertAlmostEqual(a1, round(2.11 * T.FPS) / T.FPS)
+        apeluri = []   # fără coadă în plus nu e nimic de ascultat
+        T.capete_bucata(0.95, 2.08, 0.0, 1e9, None, False, False, lambda a, b: apeluri.append(b) or "", "x", "y", 2.08)
+        self.assertEqual(apeluri, [])
+
+    def test_capete_sunet_cu_toata_coada(self):
+        rms = [(-20.0 if 1.0 <= k * T.PAS < 2.0 else -80.0) for k in range(int(4 / T.PAS))]
+        for k in range(round(2.0 / T.PAS), round(2.3 / T.PAS)):
+            rms[k] = -46.0
+        _, scurt = T.capete_sunet(rms, 1.02, 2.10, 0.0, 1e9)
+        _, lung = T.capete_sunet(rms, 1.02, 2.10, 0.0, 1e9, coada_max=None)
+        self.assertAlmostEqual(scurt, 2.08, delta=0.011)
+        self.assertGreater(lung, 2.15)
 
     def test_finalul_ramane_pe_om(self):
         # Filip, 2 oct: fără 0,25 s după ultimul cuvânt, cu gura închisă, videoul „pare tăiat”

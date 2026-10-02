@@ -8,8 +8,9 @@ de_la / pana_la: primul / ultimul cuvânt păstrat; „text#n” = a n-a apariț
 până la ultimul cuvânt al dublei; "coada": 0.1 = secunde în plus la capăt, când omul spune că finalul unui cuvânt nu se aude.
 O bucată care continuă fraza (începe cu „și”, sau are "strans": true) se lipește de cea dinainte fără pauză; "strans": false o
 lasă cu pauza dintre fraze. Ultima bucată ține 0,25 s din filmare după ultimul cuvânt ("coada": 0 o scoate).
-Capetele se pun pe sunet: înapoi până sub −50 dB, cu 0,05 s înainte și 0,02 s după (pauza la tăietură iese de 0,06–0,10 s,
-ritmul care sună natural), fără să intre în cuvântul vecin. Fiecare bucată are intrarea ei (cu -ss), trece prin fps=60 și e
+Capetele se pun pe sunet (măsurat pe wav-ul de 16 kHz): înapoi până sub −50 dB, cu 0,02 s înainte și 0,03 s după, iar din
+coada de sub −40 dB intră cel mult 0,08 s (pauza la tăietură iese de 0,06–0,10 s, ritmul care sună natural), fără să intre în
+cuvântul vecin. Fiecare bucată are intrarea ei (cu -ss), trece prin fps=60 și e
 tăiată la numărul exact de cadre: clipurile de telefon au ~59,97 fps, iar tăiatul pe timpi pierdea sau adăuga un cadru.
 Filmarea iese la formatul cerut cu --filmare (implicit 9:16): clipul umple cadrul și se decupează, nu se deformează; dacă
 orientarea lui e alta, tăietura o spune. Filtrul pe față din preferințe (brand/brand.json) se aplică aici, pe toată imaginea,
@@ -35,7 +36,8 @@ from unelte import brand, formate, platforma, proiect  # noqa: E402
 
 FPS = 60
 PRAG = -50.0
-PAD_IN, PAD_OUT = 0.05, 0.02
+PAD_IN, PAD_OUT = 0.02, 0.03    # măsurate pe varianta postată de Filip a reelului din 1 oct (îmbinările pe care nu le-a mai atins)
+COADA_MAX = 0.08                # cât intră din sunetul de sub −40 dB de după ultimul cuvânt (ecou, respirație)
 PAS = 0.005
 VOCE = -40.0                                  # peste asta e vorbire, pe ferestre de 10 ms la 16 kHz
 COADA_STRANS, DEBUT_STRANS = -32.0, -42.0     # măsurate pe ce a strâns Filip de mână în reelurile postate (1 oct 2026)
@@ -62,6 +64,7 @@ def idx(ws: list[dict], spec: str, de_la: int = 0) -> int:
 
 
 def rms_db(raw: Path) -> list[float]:
+    """Nivelul pe fișierul de 8 kHz: îl folosește cuvinte.py, ca să știe de unde trimite dubla la Whisper."""
     a = array.array("f")
     a.frombytes(raw.read_bytes())
     w = int(8000 * PAS)
@@ -82,16 +85,21 @@ def fara_semne(t: str) -> str:
     return re.sub(r"[^a-z0-9]", "", "".join(c for c in t if unicodedata.category(c) != "Mn"))
 
 
-def rms10_db(wav: Path) -> list[float]:
-    """Nivelul pe ferestre de 10 ms, din wav-ul de 16 kHz al dublelor. Îmbinările strânse se măsoară aici, nu pe fișierul de
-    8 kHz: „ș” și „s” au energia peste 4 kHz și acolo nu se văd."""
+def rms_wav(wav: Path, pas: float) -> list[float]:
+    """Nivelul pe ferestre de `pas` secunde, din wav-ul de 16 kHz al dublelor. Capetele tăieturii se măsoară aici, nu pe
+    fișierul de 8 kHz: „ș” și „s” au energia peste 4 kHz și acolo nu se văd."""
     with wave.open(str(wav), "rb") as w:
-        pas = w.getframerate() // 100
+        n = round(w.getframerate() * pas)
         a = array.array("h")
         a.frombytes(w.readframes(w.getnframes()))
     if sys.byteorder == "big":
         a.byteswap()
-    return [20 * math.log10(math.sqrt(sum(x * x for x in a[i:i + pas]) / pas) / 32768 + 1e-9) for i in range(0, len(a) - pas, pas)]
+    return [20 * math.log10(math.sqrt(sum(x * x for x in a[i:i + n]) / n) / 32768 + 1e-9) for i in range(0, len(a) - n, n)]
+
+
+def rms10_db(wav: Path) -> list[float]:
+    """Nivelul pe ferestre de 10 ms: pentru îmbinările strânse și pentru falsele starturi."""
+    return rms_wav(wav, 0.01)
 
 
 def sustinut(rms: list[float], k: int, prag_db: float, inapoi: bool = False) -> bool:
@@ -126,8 +134,10 @@ def debut(rms: list[float], i_s: int, i_e: int, prag_db: float, de_la: int = 0) 
     return i_s
 
 
-def capete_sunet(rms: list[float], s: float, e: float, lim_s: float, lim_e: float, prag_db: float = PRAG) -> tuple[float, float]:
-    """Unde începe și unde se termină sunetul bucății, în secunde, fără pad și fără să intre în cuvintele vecine."""
+def capete_sunet(rms: list[float], s: float, e: float, lim_s: float, lim_e: float, prag_db: float = PRAG,
+                 coada_max: float | None = COADA_MAX) -> tuple[float, float]:
+    """Unde începe și unde se termină sunetul bucății, în secunde, fără pad și fără să intre în cuvintele vecine. Din sunetul de
+    sub −40 dB de după ultimul cuvânt intră cel mult `coada_max` (None = toată coada, până sub prag)."""
     i_s, i_e = int(s / PAS), int(e / PAS)
     on = max(debut(rms, i_s, i_e, prag_db, int(lim_s / PAS)), int(lim_s / PAS))
     off, tacere = i_e, 0
@@ -138,6 +148,9 @@ def capete_sunet(rms: list[float], s: float, e: float, lim_s: float, lim_e: floa
             tacere += 1
             if tacere >= 50 and k > i_e:
                 break
+    voce = next((k for k in range(min(off, len(rms) - 1), on, -1) if rms[k] > VOCE and rms[k - 1] > VOCE), None)
+    if voce is not None and coada_max is not None:   # Whisper pune sfârșitul cuvântului și cu 0,1 s mai târziu: capătul mergea pe tot ecoul
+        off = min(off, voce + round(coada_max / PAS))
     return on * PAS, off * PAS
 
 
@@ -179,26 +192,46 @@ def sfarsit_strans(r10: list[float], on: float, sf: float) -> float:
     return min(sf, (k + 1) * 0.01 + 0.04)
 
 
+def _capat(text: str, k: int) -> str:
+    cuv = text.split()
+    return fara_semne(cuv[k]) if cuv else ""
+
+
 def capete_bucata(on: float, sf: float, lim_s: float, lim_e: float, r10: list[float] | None, strans_in: bool, strans_out: bool,
-                  asculta=None, ultim: str = "", prim: str = "") -> tuple[float, float, bool]:
-    """Capetele bucății pe grila de cadre. Normal: 0,05 s înainte de sunet și 0,02 s după. Strâns: pe sunet, fără pad.
-    Plasa de siguranță: bucata strânsă se ascultă (asculta(a, b) întoarce textul). Sfârșitul strâns mânca „-ri” din
-    „videoclipuri”: dacă ultimul cuvânt nu mai iese la fel, rămâne sfârșitul normal. Începutul strâns sărea peste un „ș” slab
-    („Și dacă vrei”, cu „ș” la −50 dB, se auzea „Dacă vrei”): dacă primul cuvânt nu se mai aude, bucata pornește pe sunetul
-    găsit de tăietura normală, tot fără pad. Întoarce și dacă sfârșitul a rămas strâns."""
+                  asculta=None, ultim: str = "", prim: str = "", sf_lung: float | None = None) -> tuple[float, float, bool]:
+    """Capetele bucății pe grila de cadre. Normal: 0,02 s înainte de sunet și 0,03 s după. Strâns: pe sunet, fără pad.
+    Sfârșitul se alege de la cel mai strâns la cel mai sigur: strâns (dacă bucata următoare continuă fraza), cu coada limitată
+    (sf), cu toată coada (sf_lung). Un sfârșit care scurtează bucata se ascultă (asculta(a, b) întoarce textul): sfârșitul
+    strâns mânca „-ri” din „videoclipuri”, iar coada limitată mânca „-uri” din „prompturi”. Rămâne doar dacă ultimul cuvânt
+    se aude ca în transcript sau ca în bucata cu toată coada (Whisper aude „clode” și acolo: nu s-a pierdut nimic).
+    Începutul strâns sărea peste un „ș” slab („Și dacă vrei” se auzea „Dacă vrei”): dacă primul cuvânt nu se mai aude, bucata
+    pornește pe sunetul găsit de tăietura normală, tot fără pad. Întoarce și dacă sfârșitul a rămas strâns."""
+    def cadru(t: float) -> float:
+        return round(min(t, lim_e) * FPS) / FPS
+
     t0 = debut_strans(r10, on, sf, lim_s) if strans_in else max(0.0, on - PAD_IN)
     a0 = round(t0 * FPS) / FPS
-    a1 = round(min(sf + PAD_OUT, lim_e) * FPS) / FPS
-    t1 = sfarsit_strans(r10, on, sf) if strans_out else sf
-    if asculta and (strans_in or strans_out):
-        cuv = asculta(a0, t1 if strans_out else min(sf, a0 + 2.0)).split()
-        if strans_in and prim and not (cuv and fara_semne(cuv[0]) == fara_semne(prim)):
+    scurt, sigur = cadru(sf + PAD_OUT), cadru(max(sf, sf_lung or sf) + PAD_OUT)
+    variante = [(cadru(sfarsit_strans(r10, on, sf)), True)] if strans_out else []
+    variante += [(scurt, False)] if scurt < sigur else []
+    variante.append((sigur, False))
+    if not asculta:
+        return a0, variante[0][0], variante[0][1]
+    ales, auzit, martor = variante[-1], None, None
+    for a1, strans in variante[:-1]:
+        text = asculta(a0, a1)
+        auzit = text if auzit is None else auzit
+        u = _capat(text, -1)
+        if u and u != fara_semne(ultim):
+            martor = _capat(asculta(a0, sigur), -1) if martor is None else martor
+        if u and u in (fara_semne(ultim), martor):
+            ales = (a1, strans)
+            break
+    if strans_in and prim:
+        auzit = asculta(a0, min(sigur, a0 + 2.0)) if auzit is None else auzit
+        if _capat(auzit, 0) != fara_semne(prim):
             a0 = round(max(on, lim_s) * FPS) / FPS
-        if strans_out and not (cuv and fara_semne(cuv[-1]) == fara_semne(ultim)):
-            strans_out = False
-    if strans_out:
-        a1 = round(t1 * FPS) / FPS
-    return a0, a1, strans_out
+    return a0, ales[0], ales[1]
 
 
 def coada_bucatii(b: dict, ultima: bool) -> float:
@@ -290,14 +323,15 @@ def main(argv: list[str] | None = None) -> int:
         clip = d["clip"]
         wav = dosar / "lucru" / f"{clip}.wav"
         if clip not in rms_cache:
-            r = rms_db(dosar / "lucru" / f"{clip}.raw")
+            r = rms_wav(wav, PAS)
             rms_cache[clip] = (r, prag(r))
             dur_cache[clip] = duble.durata(wav)
         s, e = ws[i0]["start"] + off, ws[i1]["end"] + off
         lim_s = ws[i0 - 1]["end"] + off + 0.02 if i0 > 0 else tr.get("de_la_timp", 0.0)
         lim_e = ws[i1 + 1]["start"] + off - 0.02 if i1 + 1 < len(ws) else dur_cache[clip]
         on, sf = capete_sunet(rms_cache[clip][0], s, e, lim_s, lim_e, rms_cache[clip][1])
-        plan.append({"b": bc, "clip": clip, "wav": wav, "on": on, "sf": sf, "lim_s": lim_s, "lim_e": lim_e, "off": off,
+        sf_lung = capete_sunet(rms_cache[clip][0], s, e, lim_s, lim_e, rms_cache[clip][1], coada_max=None)[1]
+        plan.append({"b": bc, "clip": clip, "wav": wav, "on": on, "sf": sf, "sf_lung": sf_lung, "lim_s": lim_s, "lim_e": lim_e, "off": off,
                      "ws": ws[i0:i1 + 1], "strans": e_strans(bc, ws[i0]["text"], k)})
 
     def ascultator(wav: Path):
@@ -318,7 +352,7 @@ def main(argv: list[str] | None = None) -> int:
                 r10_cache[p["clip"]] = rms10_db(p["wav"])
             r10 = r10_cache[p["clip"]]
         a0, a1, a_ramas = capete_bucata(p["on"], p["sf"], p["lim_s"], p["lim_e"], r10, strans_in, strans_out,
-                                        ascultator(p["wav"]), p["ws"][-1]["text"], p["ws"][0]["text"])
+                                        ascultator(p["wav"]), p["ws"][-1]["text"], p["ws"][0]["text"], p["sf_lung"])
         if strans_out and not a_ramas:
             print(f"   {p['b']['dubla']}: sfârșitul strâns mânca ultimul cuvânt („{p['ws'][-1]['text']}”), rămâne cel normal")
         a1 = cu_coada(a1, coada_bucatii(p["b"], k == len(plan) - 1), p["lim_e"])
