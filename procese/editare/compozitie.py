@@ -11,6 +11,7 @@ ultimul card rămâne până la final. Scrie și intervale.json (pentru planșe)
 from __future__ import annotations
 
 import json
+import math
 import shutil
 import subprocess
 import sys
@@ -223,6 +224,7 @@ def mesaj_lint(ok: bool, iesire: str) -> str:
 def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata: float) -> str:
     c = {"shift": 120, "carduri_y": 370 if sc.get("titlu") else 280, "captions_y": 1480, **sc.get("cadru", {})}
     compact_y = 340 if sc.get("titlu") else S.ZONA_SUS   # cu titlu (262–330 px), cardul compact stă sub el
+    ds = dur_str(durata)
     sfx = "\n".join(f'  <audio id="sfx-{i}" data-start="{t:.3f}" data-duration="{d:.3f}" data-track-index="{20 + i}" '
                     f'src="assets/sunete/{n}.wav" data-volume="{v}"></audio>' for i, (t, n, v, d) in enumerate(sorted(plan["sfx"])))
     linii_js = "\n".join("    " + x for x in plan["js"] + cap_js)
@@ -233,15 +235,15 @@ def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata:
 <link rel="stylesheet" href="assets/stil.css">
 <link rel="stylesheet" href="assets/brand.css">
 </head><body>
-<div id="reel" data-composition-id="reel" data-start="0" data-duration="{durata:.3f}" data-width="1080" data-height="1920"
+<div id="reel" data-composition-id="reel" data-start="0" data-duration="{ds}" data-width="1080" data-height="1920"
   style="--shift:{c['shift']}px;--carduri-y:{c['carduri_y']}px;--captions-y:{c['captions_y']}px;--compact-y:{compact_y}px">
-  <div id="fund" class="clip" data-start="0" data-duration="{durata:.3f}" data-track-index="0"></div>
+  <div id="fund" class="clip" data-start="0" data-duration="{ds}" data-track-index="0"></div>
   <div id="stage">
-    <video id="vid" class="clip" data-start="0" data-duration="{durata:.3f}" data-track-index="1" src="taiat.mp4" muted playsinline></video>
+    <video id="vid" class="clip" data-start="0" data-duration="{ds}" data-track-index="1" src="taiat.mp4" muted playsinline></video>
   </div>
   <div id="umbra"></div>
   <div id="umbra2"></div>
-  <audio id="voce" data-start="0" data-duration="{durata:.3f}" data-track-index="9" src="voce.wav" data-volume="1"></audio>
+  <audio id="voce" data-start="0" data-duration="{ds}" data-track-index="9" src="voce.wav" data-volume="1"></audio>
   {chr(10).join("  " + h for h in plan["html"])}
   <div id="captii">
   {chr(10).join("    " + h for h in cap_html)}
@@ -253,7 +255,7 @@ def pagina(sc: dict, plan: dict, cap_html: list[str], cap_js: list[str], durata:
   (function() {{
     const tl = gsap.timeline({{ paused: true }});
 {linii_js}
-    tl.set({{}}, {{}}, {durata:.3f});
+    tl.set({{}}, {{}}, {ds});
     window.__timelines["reel"] = tl;
   }})();
 </script>
@@ -283,10 +285,26 @@ def pregateste_assets(dosar: Path, stil: str, b: dict | None = None) -> None:
     brand.copiaza(b, a)
 
 
+def pe_grila(d: float) -> float:
+    return round(d * FPS) / FPS
+
+
+def dur_str(x: float) -> str:
+    """Durata pentru data-duration, cu 4 zecimale, tăiată în jos: rotunjită, trece de granița de cadru și randarea adaugă un
+    cadru la coadă, în care filmarea nu mai are imagine."""
+    return f"{math.floor(x * 10000 + 1e-6) / 10000:.4f}"
+
+
+def cadre_planificate(durata: float, fps: int) -> int:
+    """Câte cadre randează HyperFrames pentru durata scrisă în pagină (rotunjește în sus)."""
+    return math.ceil(float(dur_str(durata)) * fps - 1e-6)
+
+
 def durata_video(f: Path) -> float:
-    r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(f)],
+    """Durata imaginii, pe grila de cadre. Durata fișierului e cu ~10 ms mai lungă (sunetul AAC)."""
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=duration", "-of", "csv=p=0", str(f)],
                        capture_output=True, text=True, check=True)
-    return float(r.stdout.strip())
+    return pe_grila(float(r.stdout.strip().split(",")[0]))
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -16,11 +16,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from procese.editare import sunet  # noqa: E402
+from procese.editare import compozitie, sunet  # noqa: E402
 from unelte import platforma  # noqa: E402
 
 SR = 8000
 LAG_MAX_MS, CORELATIE_MIN, CORELATIE_CLARA, LUFS_TINTA, LUFS_TOL = 10, 0.5, 0.7, -14.0, 0.5
+SALT_MAX = 8.0   # diferența medie pe pixel între ultimele două cadre; vorbitul dă sub 3, un cadru gol peste 20
 _AUDIO: dict[str, array.array] = {}
 
 
@@ -33,6 +34,9 @@ class Rezultat:
     fps: int = 60
     durata: float = 0.0
     durata_asteptata: float = 0.0
+    cadre: int = 0
+    cadre_asteptate: int = 0
+    ultim: float = 0.0
     ok: bool = True
     probleme: list = field(default_factory=list)
 
@@ -102,6 +106,25 @@ def scene(f: Path) -> list[float]:
     return [float(x) for x in re.findall(r"pts_time:([\d.]+)", r.stderr)]
 
 
+def numar_cadre(f: Path) -> int:
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-count_frames", "-show_entries", "stream=nb_read_frames",
+                        "-of", "csv=p=0", str(f)], capture_output=True, text=True, check=True)
+    return int(r.stdout.strip().split(",")[0] or 0)
+
+
+def salt_la_ultimul_cadru(f: Path) -> float:
+    """Cât diferă ultimul cadru de penultimul. Un cadru în plus la coadă nu mai are imaginea filmării, iar blackdetect nu vede
+    un singur cadru."""
+    w, h = 160, 90
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-sseof", "-1", "-i", str(f), "-vf", f"scale={w}:{h}", "-f", "rawvideo",
+                          "-pix_fmt", "gray", "-"], capture_output=True, check=True).stdout
+    n = len(raw) // (w * h)
+    if n < 2:
+        return 0.0
+    a, b = raw[(n - 2) * w * h:(n - 1) * w * h], raw[(n - 1) * w * h:n * w * h]
+    return sum(abs(x - y) for x, y in zip(a, b)) / (w * h)
+
+
 def evalueaza(r: Rezultat) -> Rezultat:
     r.probleme = []
     if r.negre:
@@ -117,6 +140,10 @@ def evalueaza(r: Rezultat) -> Rezultat:
             r.probleme.append(f"tăietura de la {c:.3f} s nu cade pe imagine" + (f" ({dif:.0f} ms)" if dif is not None else ""))
     if r.durata_asteptata and abs(r.durata - r.durata_asteptata) > 1.5 / r.fps:
         r.probleme.append(f"durata {r.durata:.3f} s față de {r.durata_asteptata:.3f} s cât are tăietura")
+    if r.cadre_asteptate and r.cadre != r.cadre_asteptate:
+        r.probleme.append(f"{r.cadre} cadre în loc de {r.cadre_asteptate} (un cadru în plus la coadă e gol)")
+    if r.ultim > SALT_MAX:
+        r.probleme.append(f"ultimul cadru e altceva decât penultimul (diferență {r.ultim:.0f}): cadru gol la final?")
     if abs(r.lufs - LUFS_TINTA) > LUFS_TOL:
         r.probleme.append(f"loudness {r.lufs:.1f} LUFS (trebuie {LUFS_TINTA:.0f} ± {LUFS_TOL})")
     r.ok = not r.probleme
@@ -143,7 +170,10 @@ def verifica(f: Path, voce: Path, cuts: list[float], fps: int = 60, durata_astep
         l, c = xcorr(anvelopa(audio(f), t0, 2.0), anvelopa(audio(voce), t0, 2.0))
         lag.append((t0, l * 10, c))
     return evalueaza(Rezultat(negre=negre(f), lag=lag, taieturi=potriveste(cuts, scene(f)), lufs=sunet.integrat(f), fps=fps,
-                              durata=durata_video(f) if durata_asteptata else 0.0, durata_asteptata=durata_asteptata or 0.0))
+                              durata=durata_video(f) if durata_asteptata else 0.0, durata_asteptata=durata_asteptata or 0.0,
+                              cadre=numar_cadre(f) if durata_asteptata else 0,
+                              cadre_asteptate=compozitie.cadre_planificate(durata_asteptata, fps) if durata_asteptata else 0,
+                              ultim=salt_la_ultimul_cadru(f)))
 
 
 def raport(r: Rezultat) -> str:
@@ -152,6 +182,7 @@ def raport(r: Rezultat) -> str:
     linii += [f"  tăietura {c:6.3f} s: imagine {s if s is not None else '-'}, diferență {'-' if d is None else f'{d:.0f} ms'}" for c, s, d in r.taieturi]
     if r.durata_asteptata:
         linii.append(f"durata: {r.durata:.3f} s (tăietura: {r.durata_asteptata:.3f} s)")
+        linii.append(f"cadre: {r.cadre} (planificat {r.cadre_asteptate}); ultimul față de penultimul: {r.ultim:.1f}")
     linii.append(f"loudness: {r.lufs:.1f} LUFS")
     linii.append("TRECE" if r.ok else "NU TRECE: " + "; ".join(r.probleme))
     return "\n".join(linii)

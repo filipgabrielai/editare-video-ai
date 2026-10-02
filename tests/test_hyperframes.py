@@ -23,6 +23,17 @@ class TestHyperframes(unittest.TestCase):
     def test_fara_telemetrie(self):
         self.assertEqual(HF.mediu()["HYPERFRAMES_NO_TELEMETRY"], "1")
 
+    def test_intrarea_e_inchisa_si_encodarea_are_timp(self):
+        # lint și snapshot rămâneau agățate cu intrarea deschisă; encodarea cădea la limita de 600 s cu calculatorul încărcat
+        with mock.patch.object(HF.subprocess, "run") as run, mock.patch("shutil.which", return_value="node"):
+            HF.ruleaza(["lint", "x"], capteaza=True)
+            HF.ruleaza(["render", "x"])
+        for apel in run.call_args_list:
+            self.assertIs(apel.kwargs["stdin"], HF.subprocess.DEVNULL)
+        self.assertEqual(HF.mediu()["FFMPEG_ENCODE_TIMEOUT_MS"], "3600000")
+        with mock.patch.dict(HF.os.environ, {"FFMPEG_ENCODE_TIMEOUT_MS": "99"}):
+            self.assertEqual(HF.mediu()["FFMPEG_ENCODE_TIMEOUT_MS"], "99")   # ce a pus omul rămâne
+
     def test_snapshot_fara_gemini_si_fara_cadrul_de_final(self):
         a = HF.args_snapshot(Path("p"), [1.0, 2.25], Path("o"))
         self.assertEqual(a[a.index("--describe") + 1], "false")

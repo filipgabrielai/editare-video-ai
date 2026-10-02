@@ -58,6 +58,17 @@ class TestVerificareReel(unittest.TestCase):
         self.assertTrue(any("durata" in p for p in r.probleme))
 
 
+    def test_un_cadru_in_plus_nu_trece(self):
+        r = V.evalueaza(V.Rezultat(negre=[], lag=[], taieturi=[], lufs=-14.0, cadre=8771, cadre_asteptate=8770))
+        self.assertFalse(r.ok)
+        self.assertTrue(any("cadre" in p for p in r.probleme))
+        self.assertTrue(V.evalueaza(V.Rezultat(negre=[], lag=[], taieturi=[], lufs=-14.0, cadre=8770, cadre_asteptate=8770)).ok)
+
+    def test_ultimul_cadru_gol_nu_trece(self):
+        r = V.evalueaza(V.Rezultat(negre=[], lag=[], taieturi=[], lufs=-14.0, ultim=40.0))
+        self.assertFalse(r.ok)
+        self.assertTrue(any("ultimul cadru" in p for p in r.probleme))
+
 @unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg lipsește")
 class TestVerificareaPrindeGreselile(unittest.TestCase):
     """Randări stricate intenționat, ca verificarea să dovedească că le prinde, nu doar că trece pe cele bune."""
@@ -99,6 +110,19 @@ class TestVerificareaPrindeGreselile(unittest.TestCase):
                             str(f)], check=True)
             self.assertTrue(V.negre(f))
 
+
+    def test_cadrul_gol_de_la_coada(self):
+        with tempfile.TemporaryDirectory() as d:
+            bun, rau = Path(d) / "bun.mp4", Path(d) / "rau.mp4"
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=320x568:r=60:d=1",
+                            "-c:v", "libx264", "-pix_fmt", "yuv420p", str(bun)], check=True)
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=320x568:r=60:d=1", "-f", "lavfi", "-i",
+                            "color=c=white:s=320x568:r=60:d=0.016", "-filter_complex", "[0:v][1:v]concat=n=2:v=1[v]", "-map", "[v]",
+                            "-c:v", "libx264", "-pix_fmt", "yuv420p", str(rau)], check=True)
+            self.assertEqual(V.numar_cadre(bun), 60)
+            self.assertEqual(V.numar_cadre(rau), 61)
+            self.assertLess(V.salt_la_ultimul_cadru(bun), V.SALT_MAX)
+            self.assertGreater(V.salt_la_ultimul_cadru(rau), V.SALT_MAX)
 
 if __name__ == "__main__":
     unittest.main()

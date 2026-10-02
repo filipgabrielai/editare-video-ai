@@ -106,6 +106,18 @@ class TestCompozitie(unittest.TestCase):
             C.pregateste_assets(Path(d), "studio", b)
             self.assertIn("--accent:#ff5500", (Path(d) / "assets" / "brand.css").read_text(encoding="utf-8"))
 
+    def test_durata_se_scrie_taiata_in_jos(self):
+        # 146,16667 scris „146.1667” trece de granița de cadru și randarea adaugă un cadru gol la coadă (About, 2 oct)
+        self.assertEqual(C.dur_str(146.16667), "146.1666")
+        self.assertEqual(C.dur_str(26.15), "26.1500")
+        self.assertEqual(C.cadre_planificate(146.16667, 60), 8770)
+        self.assertEqual(C.cadre_planificate(26.15, 60), 1569)
+        self.assertAlmostEqual(C.pe_grila(26.5171), 1591 / 60)   # sunetul AAC e cu ~10 ms mai lung decât imaginea
+        plan = C.planifica(self.sc, self.ws, [], 6.0, S.stil("studio"))
+        p = C.pagina(self.sc, plan, [], [], 1591 / 60)
+        self.assertIn('data-duration="26.5166"', p)
+        self.assertNotIn('data-duration="26.517"', p)
+
     def test_logourile_in_locul_iconitei(self):
         sc = {"stil": "studio", "logo_inversat": ["openai"], "carduri": [{"id": "l1", "ancora": "start", "kicker": "LOCUL 1",
               "randuri": [{"text": "**Claude Code** și **Codex**", "logo": ["claude", "openai"]}]}]}

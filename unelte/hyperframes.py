@@ -20,8 +20,11 @@ def comanda(*args: str) -> list[str]:
 
 
 def mediu() -> dict[str, str]:
-    """Mediul proceselor HyperFrames: telemetria oprită, nimic nu pleacă de pe calculatorul omului."""
-    return {**os.environ, "HYPERFRAMES_NO_TELEMETRY": "1"}
+    """Mediul proceselor HyperFrames: telemetria oprită (nimic nu pleacă de pe calculatorul omului) și o oră pentru encodare
+    (limita implicită de 10 minute cădea la randări lungi, cu calculatorul încărcat). Ce a setat omul rămâne."""
+    env = {**os.environ, "HYPERFRAMES_NO_TELEMETRY": "1"}
+    env.setdefault("FFMPEG_ENCODE_TIMEOUT_MS", "3600000")
+    return env
 
 
 def args_randare(dosar: Path, iesire: Path, fps: int, calitate: str) -> list[str]:
@@ -34,10 +37,11 @@ def args_snapshot(dosar: Path, momente: list[float], iesire: Path) -> list[str]:
 
 
 def ruleaza(args: list[str], timeout: int = 3600, capteaza: bool = False) -> subprocess.CompletedProcess:
+    """Cu intrarea închisă: cu ea deschisă, lint și snapshot rămâneau agățate când nu aveau un terminal în față."""
     if capteaza:
-        return subprocess.run(comanda(*args), cwd=platforma.RADACINA, env=mediu(), timeout=timeout,
+        return subprocess.run(comanda(*args), cwd=platforma.RADACINA, env=mediu(), timeout=timeout, stdin=subprocess.DEVNULL,
                               capture_output=True, text=True, encoding="utf-8", errors="replace")
-    return subprocess.run(comanda(*args), cwd=platforma.RADACINA, env=mediu(), timeout=timeout)
+    return subprocess.run(comanda(*args), cwd=platforma.RADACINA, env=mediu(), timeout=timeout, stdin=subprocess.DEVNULL)
 
 
 def randeaza(dosar: Path, iesire: Path, fps: int = 60, calitate: str = "high") -> None:
