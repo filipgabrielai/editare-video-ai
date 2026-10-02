@@ -44,6 +44,20 @@ class TestRandare(unittest.TestCase):
                              "Claude vs ChatGPT 3 diferențe DRAFT 1.mp4")
             self.assertEqual(randeaza.urmatorul_draft(Path(d), 'a/b\\c*"d"<e>|').name, "abcde DRAFT 1.mp4")
 
+    def test_cu_ordinea_stricata_nu_se_randeaza(self):
+        # un tween care depinde de ordine arată bine la previzualizare și greșit în mp4: randarea nici nu pornește
+        import contextlib
+        import io
+        import json
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "scenariu.json").write_text(json.dumps({"titlu": "x"}), encoding="utf-8")
+            with mock.patch.object(randeaza.ordine, "verifica", return_value=False), \
+                    mock.patch.object(randeaza.hyperframes, "randeaza") as rand, contextlib.redirect_stdout(io.StringIO()) as iesire:
+                self.assertEqual(randeaza.main([d]), 1)
+            self.assertIn("Nu randez", iesire.getvalue())
+            rand.assert_not_called()
+
     def test_verify_md_cu_cifrele(self):
         from verificare import video as V
         with tempfile.TemporaryDirectory() as d:

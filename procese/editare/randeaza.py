@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Randarea reelului la calitatea finală, vocea la −14 LUFS și verificarea. Fișierul se numește „<Titlu> DRAFT n.mp4”;
-FINAL se face doar după OK-ul omului (redenumire, nu randare nouă).
+"""Randarea videoului la calitatea finală, vocea la −14 LUFS și verificarea. Înainte de randare se verifică ordinea
+animațiilor (verificare/ordine.py): cu o problemă acolo nu se randează. Fișierul se numește „<Titlu> DRAFT n.mp4”; FINAL se
+face doar după OK-ul omului (redenumire, nu randare nouă).
 
     python3 procese/editare/randeaza.py proiecte/<slug> [--fps 60] [--calitate high]
 """
@@ -16,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from procese.editare import sunet  # noqa: E402
 from unelte import hyperframes, platforma  # noqa: E402
+from verificare import ordine  # noqa: E402
 from verificare import video as verificare_video  # noqa: E402
 
 
@@ -48,6 +50,10 @@ def main(argv: list[str] | None = None) -> int:
     dosar = Path(a.dosar)
     with open(dosar / "scenariu.json", encoding="utf-8") as f:
         titlu = json.load(f).get("titlu") or dosar.name
+    print("Verific ordinea animațiilor...", flush=True)
+    if not ordine.verifica(dosar):
+        print("Nu randez: repară ce e mai sus (în scenariu sau în piesa care a scris tween-ul) și reia compoziția.")
+        return 1
     brut = dosar / "lucru" / "randare.mp4"
     print(f"Randez la {a.fps} fps, calitate {a.calitate} (câteva minute)...", flush=True)
     hyperframes.randeaza(dosar, brut, a.fps, a.calitate)

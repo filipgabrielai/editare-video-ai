@@ -49,6 +49,8 @@ jobs:
         run: python instalare/descarca.py model --nume ggml-tiny.bin
       - name: Pachetele
         run: npm install
+      - name: Browserul de randare
+        run: node node_modules/hyperframes/bin/hyperframes.mjs browser ensure
       - name: Testele unitare
         run: python -m unittest discover -s tests -t . -p "test_*.py" -v
       - name: Fără date private
